@@ -4,140 +4,270 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.material.icons.Icons
+import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.FilledTonalButton
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedButton
-import androidx.compose.material3.OutlinedIconButton
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
+import hu.ait.walletify.R
 import hu.ait.walletify.ui.theme.WalletifyTheme
+import kotlinx.coroutines.launch
+import java.util.Timer
+import kotlin.concurrent.schedule
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun InitialScreen(
+    viewModel: InitialScreenViewModel = viewModel(),
+    onNavigateToRegistration: () -> Unit,
+    onLoginSuccessful: () -> Unit
+) {
+    val sheetState = rememberModalBottomSheetState(
+        skipPartiallyExpanded = true
+    )
+    var showLoginSheet by remember { mutableStateOf(false) }
+
+
+    Box(modifier = Modifier.fillMaxSize()) {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(32.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.SpaceBetween
+        ) {
+            // Top Section - App Name
+            Text(
+                text = stringResource(R.string.app_name),
+                fontSize = 48.sp,
+                fontWeight = FontWeight.Bold,
+                color = Color(0xFF4CAF50),
+                modifier = Modifier.padding(top = 48.dp)
+            )
+
+            // Middle Section - Image and Description
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally,
+                modifier = Modifier.weight(1f),
+                verticalArrangement = Arrangement.Center
+            ) {
+                // Placeholder for image - replace with actual resource
+                Box(
+                    modifier = Modifier
+                        .size(200.dp)
+                        .padding(bottom = 32.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    // Placeholder - replace painterResource with your actual image
+                    // Image(
+                    //     painter = painterResource(id = R.drawable.wallet_icon),
+                    //     contentDescription = "Wallet Icon",
+                    //     modifier = Modifier.size(200.dp)
+                    // )
+
+                    // Temporary placeholder box
+                    Surface(
+                        modifier = Modifier.size(200.dp),
+                        color = Color.LightGray,
+                        shape = MaterialTheme.shapes.medium
+                    ) {}
+                }
+
+                Text(
+                    modifier = Modifier.padding(horizontal = 20.dp),
+                    text = "Take control of your finances",
+                    fontWeight = FontWeight.Medium,
+                    fontSize = 24.sp,
+                    textAlign = TextAlign.Center
+                )
+
+                Text(
+                    text = "Track spending, set budgets, and achieve your financial goals—all in one place.",
+                    fontSize = 16.sp,
+                    textAlign = TextAlign.Center,
+                    color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7f),
+                    lineHeight = 24.sp
+                )
+            }
+
+            // Bottom Section - Buttons
+            Column(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(16.dp)
+            ) {
+                OutlinedButton(
+                    onClick = onNavigateToRegistration,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(56.dp),
+                    colors = ButtonDefaults.outlinedButtonColors(
+                        contentColor = Color(0xFF4CAF50)
+                    )
+                ) {
+                    Text(
+                        text = "Create Account",
+                        fontSize = 16.sp,
+                        fontWeight = FontWeight.SemiBold
+                    )
+                }
+
+                TextButton(
+                    onClick = { showLoginSheet = true },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(56.dp)
+                ) {
+                    Text(
+                        text = "Log In",
+                        fontSize = 16.sp,
+                        fontWeight = FontWeight.Medium,
+                        color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7f)
+                    )
+                }
+
+                Spacer(modifier = Modifier.height(16.dp))
+            }
+        }
+
+        // Login Bottom Sheet
+        if (showLoginSheet) {
+            ModalBottomSheet(
+                onDismissRequest = { showLoginSheet = false },
+                sheetState = sheetState,
+            ) {
+                LoginBottomSheet(
+                    onDismiss = { showLoginSheet = false },
+                    onLoginSuccess = { /* navigates to dashboard */ }
+                )
+                if(viewModel.loginUiState == LoginUiState.LoginSuccess){
+                    Timer().schedule(10000){
+                        viewModel.loginUiState = LoginUiState.Init
+                        showLoginSheet = false
+                    }
+                }
+            }
+        }
+    }
+}
+
 
 @Composable
-fun InitialScreen() {
+fun LoginBottomSheet(
+    viewModel: InitialScreenViewModel = viewModel(),
+    onDismiss: () -> Unit,
+    onLoginSuccess: () -> Unit
+) {
+    var email by remember { mutableStateOf("") }
+    var password by remember { mutableStateOf("") }
+    var showPassword by remember { mutableStateOf(false) }
+
+    val coroutineScope = rememberCoroutineScope()
+
     Column(
         modifier = Modifier
-            .fillMaxSize()
-            .padding(32.dp),
+            .fillMaxWidth()
+            .padding(24.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.SpaceBetween
+        verticalArrangement = Arrangement.spacedBy(24.dp)
     ) {
-        // Top Section - App Name
         Text(
-            text = "Walletify",
-            fontSize = 48.sp,
+            text = "Welcome Back",
+            fontSize = 28.sp,
             fontWeight = FontWeight.Bold,
-            color = Color(0xFF4CAF50), // Green color
-            modifier = Modifier.padding(top = 48.dp)
+            color = MaterialTheme.colorScheme.onBackground
         )
 
-        // Middle Section - Image and Description
-        Column(
-            horizontalAlignment = Alignment.CenterHorizontally,
-            modifier = Modifier.weight(1f),
-            verticalArrangement = Arrangement.Center
-        ) {
-            // Placeholder for image - replace with actual resource
-            Box(
-                modifier = Modifier
-                    .size(200.dp)
-                    .padding(bottom = 32.dp),
-                contentAlignment = Alignment.Center
-            ) {
-                // Placeholder - replace painterResource with your actual image
-                // Image(
-                //     painter = painterResource(id = R.drawable.wallet_icon),
-                //     contentDescription = "Wallet Icon",
-                //     modifier = Modifier.size(200.dp)
-                // )
+        Text(
+            text = "Log in to continue managing your finances",
+            fontSize = 14.sp,
+            color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.6f),
+            textAlign = TextAlign.Center
+        )
 
-                // Temporary placeholder box
-                Surface(
-                    modifier = Modifier.size(200.dp),
-                    color = Color.LightGray,
-                    shape = MaterialTheme.shapes.medium
-                ) {}
-            }
+        Spacer(modifier = Modifier.height(8.dp))
 
-            Text(
-                modifier = Modifier.padding(horizontal = 20.dp),
-                text = "Take control of your finances",
-                fontWeight = FontWeight.Medium,
-                fontSize = 24.sp,
-                textAlign = TextAlign.Center
-            )
-
-            Text(
-                text = "Track spending, set budgets, and achieve your financial goals—all in one place.",
-                fontSize = 16.sp,
-                textAlign = TextAlign.Center,
-                color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7f),
-                lineHeight = 24.sp
-            )
-        }
-
-        // Bottom Section - Buttons
-        Column(
+        OutlinedTextField(
+            value = email,
+            onValueChange = { email = it },
+            label = { Text("Email") },
             modifier = Modifier.fillMaxWidth(),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(1.dp)
+            singleLine = true
+        )
+
+        OutlinedTextField(
+            value = password,
+            onValueChange = { password = it },
+            label = { Text("Password") },
+            modifier = Modifier.fillMaxWidth(),
+            singleLine = true,
+            visualTransformation = if(showPassword){ PasswordVisualTransformation()} else VisualTransformation.None,
+
+        )
+
+        Button(
+            onClick = {
+                coroutineScope.launch {
+                    val result = viewModel.loginUser(email, password)
+                    if(result?.user != null){
+                        onLoginSuccess()
+                    }
+                }
+            },
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(56.dp),
+            colors = ButtonDefaults.buttonColors(
+                containerColor = Color(0xFF4CAF50)
+            )
         ) {
-            // Create Account Button (Outlined)
-            OutlinedButton(
-                onClick = { /* Navigate to sign up */ },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(56.dp),
-                colors = ButtonDefaults.outlinedButtonColors(
-                    contentColor = Color(0xFF4CAF50)
-                )
-            ) {
-                Text(
-                    text = "Create Account",
-                    fontSize = 16.sp,
-                    fontWeight = FontWeight.SemiBold
-                )
-            }
+            Text(
+                text = "Log In",
+                fontSize = 16.sp,
+                fontWeight = FontWeight.SemiBold
+            )
+        }
 
-            // Log In Button (Text)
-            TextButton(
-                onClick = { /* Navigate to login */ },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(56.dp)
-            ) {
-                Text(
-                    text = "Log In",
-                    fontSize = 16.sp,
-                    fontWeight = FontWeight.Medium,
-                    color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7f)
-                )
-            }
-
-            Spacer(modifier = Modifier.height(16.dp))
+        TextButton(onClick = { /* Handle forgot password */ }) {
+            Text(
+                text = "Forgot Password?",
+                color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.6f)
+            )
         }
     }
 }
 
-@Preview(showBackground = true)
-@Composable
-fun InitialScreenPreview() {
-    WalletifyTheme {
-        InitialScreen()
-    }
-}
