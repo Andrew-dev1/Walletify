@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "166280652",
+    "project_id": "walletify-eb1ae",
+    "storage_bucket": "walletify-eb1ae.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:166280652:android:437e44cfff076a895cf169",
+        "android_client_info": {
+          "package_name": "hu.ait.walletify"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCXEBEsliiHtOCy5n0p07W6ocNyxJCxQDs"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
