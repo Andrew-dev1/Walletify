@@ -15,17 +15,21 @@ import androidx.navigation3.runtime.rememberNavBackStack
 import androidx.navigation3.runtime.rememberSavedStateNavEntryDecorator
 import androidx.navigation3.scene.rememberSceneSetupNavEntryDecorator
 import androidx.navigation3.ui.NavDisplay
+import dagger.hilt.android.AndroidEntryPoint
 import hu.ait.walletify.ui.navigation.DashboardScreenRoute
+import hu.ait.walletify.ui.navigation.ForgetPasswordScreenRoute
 import hu.ait.walletify.ui.navigation.InitialScreenRoute
 import hu.ait.walletify.ui.navigation.RegistrationCredentialsScreenRoute
 import hu.ait.walletify.ui.navigation.RegistrationQuestionsScreenRoute
 import hu.ait.walletify.ui.screens.DashboardScreen
+import hu.ait.walletify.ui.screens.ForgetPasswordScreen
 import hu.ait.walletify.ui.screens.InitialScreen
 import hu.ait.walletify.ui.screens.RegistrationCredentialsScreen
 import hu.ait.walletify.ui.screens.RegistrationQuestionsScreen
 import hu.ait.walletify.ui.theme.WalletifyTheme
 
-class MainActivity : ComponentActivity() {
+@AndroidEntryPoint
+class MainActivity: ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
@@ -61,25 +65,34 @@ fun NavGraph(modifier: Modifier) {
                 InitialScreen(
                     onNavigateToRegistration = { backStack.add(RegistrationQuestionsScreenRoute) },
                     onLoginSuccessful = {
-                        backStack.add(DashboardScreenRoute);
-                        backStack.removeLastOrNull()
-                    }
+//                        backStack.removeLastOrNull()
+                        backStack.add(DashboardScreenRoute)
+                    },
+                    onNavigateToForgetPassword = { backStack.add(ForgetPasswordScreenRoute) }
                 )
             }
             entry<RegistrationQuestionsScreenRoute> {
                 RegistrationQuestionsScreen(
-                    onNext = { backStack.add(RegistrationCredentialsScreenRoute) },
+                    onNext = { purpose, source ->
+                        backStack.add(
+                            RegistrationCredentialsScreenRoute(purpose,source)
+                        ) },
                     onBack = { backStack.removeLastOrNull() }
                 )
             }
-            entry<RegistrationCredentialsScreenRoute> {
+            entry<RegistrationCredentialsScreenRoute> {(purpose, source) ->
                 RegistrationCredentialsScreen(
+                    purpose = purpose,
+                    source = source,
                     onComplete = { backStack.add(DashboardScreenRoute)},
                     onBack = { backStack.removeLastOrNull() }
                 )
             }
             entry<DashboardScreenRoute>{
                 DashboardScreen()
+            }
+            entry<ForgetPasswordScreenRoute> {
+                ForgetPasswordScreen()
             }
         }
     )

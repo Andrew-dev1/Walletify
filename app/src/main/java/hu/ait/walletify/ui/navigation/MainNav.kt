@@ -15,7 +15,13 @@ data object InitialScreenRoute: NavKey
 data object RegistrationQuestionsScreenRoute: NavKey
 
 @Serializable
-data object RegistrationCredentialsScreenRoute: NavKey
+data class RegistrationCredentialsScreenRoute(
+    val purpose: String,
+    val source: String
+) : NavKey
 
 @Serializable
 data object DashboardScreenRoute: NavKey
+
+@Serializable
+data object ForgetPasswordScreenRoute: NavKey

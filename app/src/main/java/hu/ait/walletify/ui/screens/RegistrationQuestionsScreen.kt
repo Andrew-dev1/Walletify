@@ -27,7 +27,7 @@ import androidx.compose.ui.unit.sp
 
 @Composable
 fun RegistrationQuestionsScreen(
-    onNext: () -> Unit,
+    onNext: (purpose: String, source: String) -> Unit,
     onBack: () -> Unit
 ) {
     var selectedPurpose by remember { mutableStateOf("") }
@@ -124,7 +124,7 @@ fun RegistrationQuestionsScreen(
             }
 
             Button(
-                onClick = onNext,
+                onClick = { onNext(selectedPurpose, selectedSource) },
                 modifier = Modifier
                     .weight(1f)
                     .height(56.dp),
