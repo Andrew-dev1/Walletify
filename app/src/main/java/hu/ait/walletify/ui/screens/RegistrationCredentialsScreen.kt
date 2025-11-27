@@ -4,16 +4,18 @@ import android.graphics.drawable.Icon
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -21,9 +23,11 @@ import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -32,23 +36,33 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 
 @Composable
 fun RegistrationCredentialsScreen(
+    purpose: String,
+    source: String,
     onComplete: () -> Unit,
     onBack: () -> Unit,
+    viewModel: LoginViewModel = hiltViewModel()
 ) {
-    var email by remember { mutableStateOf("") }
-    var password by remember { mutableStateOf("") }
-    var confirmPassword by remember { mutableStateOf("") }
+    var email by rememberSaveable { mutableStateOf("") }
+    var password by rememberSaveable { mutableStateOf("") }
+    var confirmPassword by rememberSaveable { mutableStateOf("") }
 
+    val uiState = viewModel.loginUiState
+
+    // Handle registration success
+    LaunchedEffect(uiState) {
+        if (uiState is LoginUiState.RegisterSuccess) {
+            onComplete() // Navigate to dashboard
+        }
+    }
 
     Column(
         modifier = Modifier
             .fillMaxSize()
             .padding(32.dp),
-        verticalArrangement = Arrangement.SpaceBetween
     ) {
 
         Text(
@@ -73,10 +87,11 @@ fun RegistrationCredentialsScreen(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(bottom = 16.dp),
-            singleLine = true
+            singleLine = true,
+            enabled = uiState !is LoginUiState.Loading
         )
 
-        var showPassword = false
+        var showPassword by remember {mutableStateOf(false)}
         OutlinedTextField(
             value = password,
             onValueChange = { password = it },
@@ -97,9 +112,10 @@ fun RegistrationCredentialsScreen(
                     }
                 }
             },
+            enabled = uiState !is LoginUiState.Loading
         )
 
-        var showPasswordConfirm = false
+        var showPasswordConfirm by remember {mutableStateOf(false)}
         OutlinedTextField(
             value = confirmPassword,
             onValueChange = { confirmPassword = it },
@@ -118,8 +134,10 @@ fun RegistrationCredentialsScreen(
                     }
                 }
             },
+            enabled = uiState !is LoginUiState.Loading,
             isError = confirmPassword.isNotEmpty() && password != confirmPassword
         )
+        Spacer(modifier = Modifier.height(16.dp))
 
         // shows error message if password is not valid and prioritizes requirements
         when {
@@ -141,6 +159,15 @@ fun RegistrationCredentialsScreen(
             }
         }
 
+        if (uiState is LoginUiState.Error) {
+            Text(
+                text = uiState.errorMessage ?: "Registration failed",
+                color = MaterialTheme.colorScheme.error,
+                fontSize = 12.sp,
+                modifier = Modifier.padding(start = 16.dp, top = 8.dp)
+            )
+        }
+
 
         Row(
             modifier = Modifier.fillMaxWidth(),
@@ -150,26 +177,39 @@ fun RegistrationCredentialsScreen(
                 onClick = onBack,
                 modifier = Modifier
                     .weight(1f)
-                    .height(56.dp)
+                    .height(56.dp),
+                enabled = uiState !is LoginUiState.Loading
             ) {
                 Text("Back")
             }
 
             Button(
-                onClick = onComplete,
+                onClick = {
+                    viewModel.registerUser(
+                        email, password,
+                        purpose,
+                        source)
+                },
                 modifier = Modifier
                     .weight(1f)
                     .height(56.dp),
                 colors = ButtonDefaults.buttonColors(
                     containerColor = Color(0xFF4CAF50)
                 ),
-                enabled = email.isNotEmpty() &&
+                enabled = uiState !is LoginUiState.Loading &&
+                        email.isNotEmpty() &&
                         password.isNotEmpty() &&
                         password == confirmPassword &&
                         isPasswordValid(password)
-
             ) {
-                Text("Create Account")
+                if (uiState is LoginUiState.Loading) {
+                    CircularProgressIndicator(
+                        modifier = Modifier.size(24.dp),
+                        color = Color.White
+                    )
+                } else {
+                    Text("Create Account")
+                }
             }
         }
     }

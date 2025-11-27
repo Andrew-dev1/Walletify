@@ -4,32 +4,34 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -39,12 +41,11 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.viewmodel.compose.viewModel
 import hu.ait.walletify.R
-import hu.ait.walletify.ui.theme.WalletifyTheme
 import kotlinx.coroutines.launch
 import java.util.Timer
 import kotlin.concurrent.schedule
@@ -52,9 +53,10 @@ import kotlin.concurrent.schedule
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun InitialScreen(
-    viewModel: InitialScreenViewModel = viewModel(),
+    viewModel: LoginViewModel = hiltViewModel(),
     onNavigateToRegistration: () -> Unit,
-    onLoginSuccessful: () -> Unit
+    onLoginSuccessful: () -> Unit,
+    onNavigateToForgetPassword: () -> Unit
 ) {
     val sheetState = rememberModalBottomSheetState(
         skipPartiallyExpanded = true
@@ -172,14 +174,19 @@ fun InitialScreen(
             ) {
                 LoginBottomSheet(
                     onDismiss = { showLoginSheet = false },
-                    onLoginSuccess = { /* navigates to dashboard */ }
-                )
-                if(viewModel.loginUiState == LoginUiState.LoginSuccess){
-                    Timer().schedule(10000){
-                        viewModel.loginUiState = LoginUiState.Init
+                    onLoginSuccess = {
                         showLoginSheet = false
-                    }
-                }
+                        onLoginSuccessful() },
+                    onNavigateToPasswordReset =  {
+                        showLoginSheet = false
+                        onNavigateToForgetPassword() }
+                )
+//                if(viewModel.loginUiState == LoginUiState.LoginSuccess){
+//                    Timer().schedule(10000){
+//                        viewModel.loginUiState = LoginUiState.Init
+//                        showLoginSheet = false
+//                    }
+//                }
             }
         }
     }
@@ -188,15 +195,25 @@ fun InitialScreen(
 
 @Composable
 fun LoginBottomSheet(
-    viewModel: InitialScreenViewModel = viewModel(),
+    viewModel: LoginViewModel = hiltViewModel(),
     onDismiss: () -> Unit,
-    onLoginSuccess: () -> Unit
+    onLoginSuccess: () -> Unit,
+    onNavigateToPasswordReset: () -> Unit
 ) {
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     var showPassword by remember { mutableStateOf(false) }
 
     val coroutineScope = rememberCoroutineScope()
+
+    val uiState = viewModel.loginUiState
+
+    // Navigate on successful login
+//    LaunchedEffect(uiState) {
+//        if (uiState is LoginUiState.LoginSuccess) {
+//            onLoginSuccess()
+//        }
+//    }
 
     Column(
         modifier = Modifier
@@ -226,7 +243,8 @@ fun LoginBottomSheet(
             onValueChange = { email = it },
             label = { Text("Email") },
             modifier = Modifier.fillMaxWidth(),
-            singleLine = true
+            singleLine = true,
+            enabled = uiState !is LoginUiState.Loading
         )
 
         OutlinedTextField(
@@ -236,6 +254,16 @@ fun LoginBottomSheet(
             modifier = Modifier.fillMaxWidth(),
             singleLine = true,
             visualTransformation = if(showPassword){ PasswordVisualTransformation()} else VisualTransformation.None,
+            trailingIcon = { // Change trailing icons    soon
+                IconButton(onClick = { showPassword = !showPassword }) {
+                    if (showPassword) {
+                        Icon(Icons.Default.Add, null)
+                    } else {
+                        Icon(Icons.Default.Clear, null)
+                    }
+                }
+            },
+            enabled = uiState !is LoginUiState.Loading
 
         )
 
@@ -243,7 +271,7 @@ fun LoginBottomSheet(
             onClick = {
                 coroutineScope.launch {
                     val result = viewModel.loginUser(email, password)
-                    if(result?.user != null){
+                    if(result != null){
                         onLoginSuccess()
                     }
                 }
@@ -253,21 +281,31 @@ fun LoginBottomSheet(
                 .height(56.dp),
             colors = ButtonDefaults.buttonColors(
                 containerColor = Color(0xFF4CAF50)
-            )
+            ),
+            enabled = uiState !is LoginUiState.Loading &&
+                    email.isNotEmpty() &&
+                    password.isNotEmpty()
         ) {
-            Text(
-                text = "Log In",
-                fontSize = 16.sp,
-                fontWeight = FontWeight.SemiBold
-            )
+            if (viewModel.loginUiState is LoginUiState.Loading) {
+                CircularProgressIndicator(
+                    modifier = Modifier.size(24.dp),
+                    color = Color.White
+                )
+            } else {
+                Text("Login In")
+            }
         }
 
-        TextButton(onClick = { /* Handle forgot password */ }) {
-            Text(
-                text = "Forgot Password?",
+
+        TextButton(onClick = {
+            onDismiss() // Close the sheet
+            onNavigateToPasswordReset() // Navigate to full password reset screen
+        }) {
+            Text("Forgot Password?",
                 color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.6f)
             )
         }
+
     }
 }
 
