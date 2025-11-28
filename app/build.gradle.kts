@@ -1,3 +1,6 @@
+import java.util.Properties
+// import kotlin.apply
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
@@ -9,10 +12,26 @@ plugins {
     alias(libs.plugins.hilt.gradle)
     alias(libs.plugins.google.gms.google.services)
 }
+val localProperties = Properties().apply {
+    val file = rootProject.file("local.properties")
+    if (file.exists()) {
+        file.inputStream().use(::load)
+    }
+}
+
+fun getSecret(name: String, defaultValue: String = ""): String {
+    val value = localProperties.getProperty(name) ?: System.getenv(name) ?: defaultValue
+    return value.trim()
+}
+
+val plaidClientId = getSecret("PLAID_CLIENT_ID")
+val plaidSecret = getSecret("PLAID_SECRET")
+val plaidClientName = getSecret("PLAID_CLIENT_NAME", "Walletify")
 
 android {
     namespace = "hu.ait.walletify"
     compileSdk = 36
+
 
     defaultConfig {
         applicationId = "hu.ait.walletify"
@@ -22,6 +41,11 @@ android {
         versionName = "1.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+
+        buildConfigField("String", "PLAID_CLIENT_ID", "\"$plaidClientId\"")
+        buildConfigField("String", "PLAID_SECRET", "\"$plaidSecret\"")
+        buildConfigField("String", "PLAID_CLIENT_NAME", "\"$plaidClientName\"")
+        buildConfigField("String", "PLAID_ENV", "\"sandbox\"")
     }
 
     buildTypes {
@@ -42,6 +66,7 @@ android {
     }
     buildFeatures {
         compose = true
+        buildConfig = true
     }
 }
 
@@ -55,6 +80,7 @@ dependencies {
     implementation(libs.androidx.ui.graphics)
     implementation(libs.androidx.ui.tooling.preview)
     implementation(libs.androidx.material3)
+    implementation(libs.androidx.material.icons.extended)
     implementation(libs.firebase.auth)
     implementation(libs.firebase.firestore)
     testImplementation(libs.junit)
@@ -79,4 +105,8 @@ dependencies {
     implementation(libs.retrofit)
     implementation(libs.kotlinx.serialization)
     implementation(libs.serialization.converter)
+    // http build request to help retro and then unit testing later
+    implementation(libs.okhttp)
+    implementation(libs.okhttp.logging)
+    testImplementation(libs.kotlinx.coroutines.test)
 }
