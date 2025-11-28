@@ -4,6 +4,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -17,7 +18,12 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.Divider
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.List
+import androidx.compose.material.icons.filled.AccountCircle
+import androidx.compose.material.icons.filled.Home
+import androidx.compose.material.icons.filled.List
 import androidx.compose.material.icons.filled.Notifications
+import androidx.compose.material.icons.rounded.ThumbUp
 import androidx.compose.material3.Badge
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -25,15 +31,24 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.NavigationBar
+import androidx.compose.material3.NavigationBarItem
+import androidx.compose.material3.NavigationBarItemDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -75,9 +90,97 @@ data class MonthlyData(
     val amount: Double
 )
 
+sealed class BottomNavItem(
+    val route: String,
+    val icon: ImageVector,
+    val title: String
+) {
+    object Dashboard : BottomNavItem("dashboard", Icons.Default.Home, "Dashboard")
+    object Transactions : BottomNavItem("transactions", Icons.AutoMirrored.Filled.List, "Transactions")
+    object Spending : BottomNavItem("spending", Icons.Rounded.ThumbUp, "Spending")
+    object Profile : BottomNavItem("profile", Icons.Default.AccountCircle, "Profile")
+}
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DashboardScreen() {
+
+
+    var selectedTab by remember { mutableIntStateOf(0) }
+    val navItems = listOf(
+        BottomNavItem.Dashboard,
+        BottomNavItem.Transactions,
+        BottomNavItem.Spending,
+        BottomNavItem.Profile
+    )
+
+    Scaffold(
+        topBar = {
+            TopAppBar(
+                title = {
+                    Text(
+                        navItems[selectedTab].title,
+                        fontWeight = FontWeight.Bold
+                    )
+                },
+                actions = {
+                    IconButton(onClick = { /* Open notifications */ }) {
+                        Badge(
+                            containerColor = Color(0xFFFF5252)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Notifications,
+                                contentDescription = "Notifications"
+                            )
+                        }
+                    }
+                },
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = MaterialTheme.colorScheme.background
+                )
+            )
+        },
+        bottomBar = {
+            NavigationBar(
+                containerColor = MaterialTheme.colorScheme.surface,
+                tonalElevation = 8.dp
+            ) {
+                navItems.forEachIndexed { index, item ->
+                    NavigationBarItem(
+                        icon = {
+                            Icon(
+                                imageVector = item.icon,
+                                contentDescription = item.title
+                            )// Explicit intent, you say launch the activity class explicitly
+                            // implicit just says do an action and then computer searches for it
+                        },
+                        label = { Text(item.title) },
+                        selected = selectedTab == index,
+                        onClick = { selectedTab = index },
+                        colors = NavigationBarItemDefaults.colors(
+                            selectedIconColor = Color(0xFF4CAF50),
+                            selectedTextColor = Color(0xFF4CAF50),
+                            indicatorColor = Color(0xFF4CAF50).copy(alpha = 0.1f)
+                        )
+                    )
+                }
+            }
+        }
+    ) { padding ->
+        // Content changes based on selected tab
+        when (selectedTab) {
+            0 -> DashboardContent(padding)
+            1 -> TransactionsContent(padding)
+            2 -> SpendingContent(padding)
+            3 -> ProfileContent(padding)
+
+        }
+    }
+}
+
+@Composable
+fun DashboardContent(padding: PaddingValues) {
+
     val currentMonth = "November"
     val totalSpent = 2847.50
     val budgetRemaining = 1152.50
@@ -98,33 +201,6 @@ fun DashboardScreen() {
         Transaction("Salary", "Income", 4000.00, "Nov 15", isExpense = false)
     )
 
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                title = {
-                    Text(
-                        "Dashboard",
-                        fontWeight = FontWeight.Bold
-                    )
-                },
-                actions = {
-                    IconButton(onClick = { /* Open notifications */ }) {
-                        Badge(
-                            containerColor = Color(0xFFFF5252)
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.Notifications,
-                                contentDescription = "Notifications"
-                            )
-                        }
-                    }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.background
-                )
-            )
-        }
-    ) { padding ->
         LazyColumn(
             modifier = Modifier
                 .fillMaxSize()
@@ -334,6 +410,44 @@ fun DashboardScreen() {
 
             item { Spacer(modifier = Modifier.height(16.dp)) }
         }
+
+}
+@Composable
+fun SpendingContent(padding: PaddingValues) {
+    // Placeholder for Spending/Pie Chart page
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(padding),
+        contentAlignment = Alignment.Center
+    ) {
+        Text("Spending Analysis - Coming Soon", fontSize = 18.sp)
+    }
+}
+
+@Composable
+fun ProfileContent(padding: PaddingValues) {
+    // Placeholder for Profile page
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(padding),
+        contentAlignment = Alignment.Center
+    ) {
+        Text("Profile & Settings - Coming Soon", fontSize = 18.sp)
+    }
+}
+
+@Composable
+fun TransactionsContent(padding: PaddingValues) {
+    // Placeholder for Profile page
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(padding),
+        contentAlignment = Alignment.Center
+    ) {
+        Text("Profile & Settings - Coming Soon", fontSize = 18.sp)
     }
 }
 
