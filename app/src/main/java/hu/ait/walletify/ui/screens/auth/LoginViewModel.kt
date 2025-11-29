@@ -1,4 +1,4 @@
-package hu.ait.walletify.ui.screens
+package hu.ait.walletify.ui.screens.auth
 
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -56,18 +56,6 @@ class LoginViewModel @Inject constructor(): ViewModel(){
                 )
                 loginUiState = LoginUiState.RegisterSuccess
 
-//                db.collection("")
-//                    .document(email)
-//                    .set(userInfo)
-//                    .addOnSuccessListener {
-//                        loginUiState = LoginUiState.RegisterSuccess
-//                    }
-//                    .addOnFailureListener { firestoreError ->
-//                        // Auth succeeded but Firestore failed
-//                        loginUiState = LoginUiState.Error(
-//                            firestoreError.localizedMessage ?: "Failed to create user profile"
-//                        )
-//                    }
             }
             .addOnFailureListener { authError ->
                 loginUiState = LoginUiState.Error(
@@ -101,6 +89,10 @@ class LoginViewModel @Inject constructor(): ViewModel(){
             )
             false
         }
+    }
+
+    fun resetState() {
+        loginUiState = LoginUiState.Init
     }
 
 

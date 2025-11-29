@@ -1,4 +1,4 @@
-package hu.ait.walletify.ui.screens
+package hu.ait.walletify.ui.screens.auth
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
