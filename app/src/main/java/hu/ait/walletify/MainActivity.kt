@@ -7,25 +7,9 @@ import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Scaffold
-import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import androidx.lifecycle.viewmodel.navigation3.rememberViewModelStoreNavEntryDecorator
-import androidx.navigation3.runtime.entryProvider
-import androidx.navigation3.runtime.rememberNavBackStack
-import androidx.navigation3.runtime.rememberSavedStateNavEntryDecorator
-import androidx.navigation3.scene.rememberSceneSetupNavEntryDecorator
-import androidx.navigation3.ui.NavDisplay
 import dagger.hilt.android.AndroidEntryPoint
-import hu.ait.walletify.ui.navigation.DashboardScreenRoute
-import hu.ait.walletify.ui.navigation.ForgetPasswordScreenRoute
-import hu.ait.walletify.ui.navigation.InitialScreenRoute
-import hu.ait.walletify.ui.navigation.RegistrationCredentialsScreenRoute
-import hu.ait.walletify.ui.navigation.RegistrationQuestionsScreenRoute
-import hu.ait.walletify.ui.screens.DashboardScreen
-import hu.ait.walletify.ui.screens.ForgetPasswordScreen
-import hu.ait.walletify.ui.screens.InitialScreen
-import hu.ait.walletify.ui.screens.RegistrationCredentialsScreen
-import hu.ait.walletify.ui.screens.RegistrationQuestionsScreen
+import hu.ait.walletify.ui.navigation.NavHost
 import hu.ait.walletify.ui.theme.WalletifyTheme
 
 @AndroidEntryPoint
@@ -36,7 +20,7 @@ class MainActivity: ComponentActivity() {
         setContent {
             WalletifyTheme {
                 Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
-                    NavGraph(
+                    NavHost(
                         modifier = Modifier.padding(innerPadding)
                     )
                 }
@@ -47,53 +31,3 @@ class MainActivity: ComponentActivity() {
 
 
 
-@Composable
-fun NavGraph(modifier: Modifier) {
-    val backStack = rememberNavBackStack(InitialScreenRoute)
-
-    NavDisplay(
-        //modifier = modifier,
-        backStack = backStack,
-        onBack = { backStack.removeLastOrNull() },
-        entryDecorators = listOf(
-            rememberSceneSetupNavEntryDecorator(),
-            rememberSavedStateNavEntryDecorator(),
-            rememberViewModelStoreNavEntryDecorator()
-        ),
-        entryProvider = entryProvider {
-            entry<InitialScreenRoute> {
-                InitialScreen(
-                    onNavigateToRegistration = { backStack.add(RegistrationQuestionsScreenRoute) },
-                    onLoginSuccessful = {
-//                        backStack.removeLastOrNull()
-                        backStack.add(DashboardScreenRoute)
-                    },
-                    onNavigateToForgetPassword = { backStack.add(ForgetPasswordScreenRoute) }
-                )
-            }
-            entry<RegistrationQuestionsScreenRoute> {
-                RegistrationQuestionsScreen(
-                    onNext = { purpose, source ->
-                        backStack.add(
-                            RegistrationCredentialsScreenRoute(purpose,source)
-                        ) },
-                    onBack = { backStack.removeLastOrNull() }
-                )
-            }
-            entry<RegistrationCredentialsScreenRoute> {(purpose, source) ->
-                RegistrationCredentialsScreen(
-                    purpose = purpose,
-                    source = source,
-                    onComplete = { backStack.add(DashboardScreenRoute)},
-                    onBack = { backStack.removeLastOrNull() }
-                )
-            }
-            entry<DashboardScreenRoute>{
-                DashboardScreen()
-            }
-            entry<ForgetPasswordScreenRoute> {
-                ForgetPasswordScreen()
-            }
-        }
-    )
-}

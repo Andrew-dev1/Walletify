@@ -1,6 +1,5 @@
-package hu.ait.walletify.ui.screens
+package hu.ait.walletify.ui.screens.auth
 
-import android.graphics.drawable.Icon
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -13,6 +12,8 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Clear
+import androidx.compose.material.icons.filled.Visibility
+import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
@@ -104,12 +105,9 @@ fun RegistrationCredentialsScreen(
                 if (showPassword) VisualTransformation.None
                 else PasswordVisualTransformation(),
             trailingIcon = {
+                val icon = if (showPassword) Icons.Filled.VisibilityOff else Icons.Filled.Visibility
                 IconButton(onClick = { showPassword = !showPassword }) {
-                    if (showPassword) {
-                        Icon(Icons.Default.Add, null)
-                    } else {
-                        Icon(Icons.Default.Clear, null)
-                    }
+                    Icon(imageVector = icon, contentDescription = null)
                 }
             },
             enabled = uiState !is LoginUiState.Loading
@@ -126,12 +124,9 @@ fun RegistrationCredentialsScreen(
                 if (showPasswordConfirm) VisualTransformation.None
                 else PasswordVisualTransformation(),
             trailingIcon = {
-                IconButton(onClick = { showPasswordConfirm = !showPasswordConfirm }) {
-                    if (showPasswordConfirm) {
-                        Icon(Icons.Default.Add, null)
-                    } else {
-                        Icon(Icons.Default.Clear, null)
-                    }
+                val icon = if (showPassword) Icons.Filled.VisibilityOff else Icons.Filled.Visibility
+                IconButton(onClick = { showPassword = !showPassword }) {
+                    Icon(imageVector = icon, contentDescription = null)
                 }
             },
             enabled = uiState !is LoginUiState.Loading,

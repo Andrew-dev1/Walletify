@@ -1,4 +1,4 @@
-package hu.ait.walletify.ui.screens
+package hu.ait.walletify.ui.screens.auth
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -12,6 +12,8 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Clear
+import androidx.compose.material.icons.filled.Visibility
+import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
@@ -27,7 +29,6 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -44,11 +45,8 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
-import androidx.lifecycle.viewmodel.compose.viewModel
 import hu.ait.walletify.R
 import kotlinx.coroutines.launch
-import java.util.Timer
-import kotlin.concurrent.schedule
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -181,12 +179,7 @@ fun InitialScreen(
                         showLoginSheet = false
                         onNavigateToForgetPassword() }
                 )
-//                if(viewModel.loginUiState == LoginUiState.LoginSuccess){
-//                    Timer().schedule(10000){
-//                        viewModel.loginUiState = LoginUiState.Init
-//                        showLoginSheet = false
-//                    }
-//                }
+
             }
         }
     }
@@ -254,13 +247,10 @@ fun LoginBottomSheet(
             modifier = Modifier.fillMaxWidth(),
             singleLine = true,
             visualTransformation = if(showPassword){ PasswordVisualTransformation()} else VisualTransformation.None,
-            trailingIcon = { // Change trailing icons    soon
+            trailingIcon = {
+                val icon = if (showPassword) Icons.Filled.VisibilityOff else Icons.Filled.Visibility
                 IconButton(onClick = { showPassword = !showPassword }) {
-                    if (showPassword) {
-                        Icon(Icons.Default.Add, null)
-                    } else {
-                        Icon(Icons.Default.Clear, null)
-                    }
+                    Icon(imageVector = icon, contentDescription = null)
                 }
             },
             enabled = uiState !is LoginUiState.Loading
@@ -270,7 +260,7 @@ fun LoginBottomSheet(
         Button(
             onClick = {
                 coroutineScope.launch {
-                    val result = viewModel.loginUser(email, password)
+                    val result = viewModel.loginUser(email.trim(), password.trim())
                     if(result != null){
                         onLoginSuccess()
                     }
@@ -304,6 +294,15 @@ fun LoginBottomSheet(
             Text("Forgot Password?",
                 color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.6f)
             )
+        }
+
+        if (uiState is LoginUiState.Error) {
+            uiState.errorMessage?.let {
+                Text(
+                    text = it,
+                    color = MaterialTheme.colorScheme.error
+                )
+            }
         }
 
     }
