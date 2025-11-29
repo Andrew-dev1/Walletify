@@ -4,12 +4,19 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
 import com.google.firebase.Firebase
 import com.google.firebase.auth.AuthResult
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.auth
 import com.google.firebase.firestore.firestore
 import dagger.hilt.android.lifecycle.HiltViewModel
+import hu.ait.walletify.data.model.UserProfile
+import hu.ait.walletify.data.repository.AuthRepository
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
 import javax.inject.Inject
 
@@ -18,83 +25,82 @@ sealed interface LoginUiState{
     object Init: LoginUiState
     object Loading: LoginUiState
     object RegisterSuccess: LoginUiState
-    object LoginSuccess: LoginUiState
+    data class LoginSuccess(val profile: UserProfile) : LoginUiState
     data class Error(val errorMessage: String?): LoginUiState
 
 }
 
-data class UserInfo(
-    val email: String,
-    val password: String,
-    val purpose: String,
-    val source: String,
-    val createdAt: Long = System.currentTimeMillis()
-)
 
 
 @HiltViewModel
-class LoginViewModel @Inject constructor(): ViewModel(){
-    var loginUiState: LoginUiState by mutableStateOf(LoginUiState.Init)
-    private lateinit var auth: FirebaseAuth
+class LoginViewModel @Inject constructor(
+    private val authRepository: AuthRepository
+) : ViewModel() {
 
-    init {
-        auth = Firebase.auth
-    }
+    private val _loginUiState = MutableStateFlow<LoginUiState>(LoginUiState.Init)
+    val loginUiState: StateFlow<LoginUiState> = _loginUiState.asStateFlow()
 
-    fun registerUser(email: String, password: String, purpose: String, source: String) {
-        loginUiState = LoginUiState.Loading
-        auth.createUserWithEmailAndPassword(email, password)
-            .addOnSuccessListener { authResult ->
-                // Only add to Firestore after successful authentication
-                val db = Firebase.firestore
-                val userInfo = UserInfo(
-                    email = email,
-                    password = password,
-                    "",
-                    "",
-                    createdAt = System.currentTimeMillis()
-                )
-                loginUiState = LoginUiState.RegisterSuccess
+    // Also keep the activeUser flow from repository
+    val activeUser = authRepository.activeUser
 
-            }
-            .addOnFailureListener { authError ->
-                loginUiState = LoginUiState.Error(
-                    authError.localizedMessage ?: "Registration failed"
-                )
-            }
-    }
+    fun registerUser(name: String, email: String, password: String, source: String, purpose: String) {
+        viewModelScope.launch {
+            _loginUiState.value = LoginUiState.Loading
 
-    suspend fun loginUser(email: String, password: String) : AuthResult? {
-        loginUiState = LoginUiState.Loading
-        return try {
-            val result = auth.signInWithEmailAndPassword(email, password).await()
-            loginUiState = LoginUiState.LoginSuccess
-            result
-        } catch (e: Exception) {
-            loginUiState = LoginUiState.Error(
-                e.localizedMessage ?: "Login failed"
+            authRepository.register(name, email, password, source, purpose).fold(
+                onSuccess = { profile ->
+                    _loginUiState.value = LoginUiState.RegisterSuccess
+                },
+                onFailure = { error ->
+                    _loginUiState.value = LoginUiState.Error(
+                        error.localizedMessage ?: "Registration failed"
+                    )
+                }
             )
-            e.printStackTrace()
-            null
         }
     }
 
-    suspend fun forgetPassword(email: String): Boolean {
-        return try {
-            auth.sendPasswordResetEmail(email).await()
-            true
-        } catch (e: Exception) {
-            loginUiState = LoginUiState.Error(
-                e.localizedMessage ?: "Failed to send reset email"
+    fun loginUser(email: String, password: String) {
+        viewModelScope.launch {
+            _loginUiState.value = LoginUiState.Loading
+
+            authRepository.login(email, password).fold(
+                onSuccess = { profile ->
+                    _loginUiState.value = LoginUiState.LoginSuccess(profile)
+                },
+                onFailure = { error ->
+                    _loginUiState.value = LoginUiState.Error(
+                        error.localizedMessage ?: "Login failed"
+                    )
+                }
             )
-            false
         }
+    }
+
+    fun forgetPassword(email: String) {
+        viewModelScope.launch {
+            _loginUiState.value = LoginUiState.Loading
+
+            authRepository.sendPasswordReset(email).fold(
+                onSuccess = {
+                    // You might want a specific state for password reset success
+                    _loginUiState.value = LoginUiState.Init
+                },
+                onFailure = { error ->
+                    _loginUiState.value = LoginUiState.Error(
+                        error.localizedMessage ?: "Failed to send reset email"
+                    )
+                }
+            )
+        }
+    }
+
+    fun logout() {
+        authRepository.logout()
+        _loginUiState.value = LoginUiState.Init
     }
 
     fun resetState() {
-        loginUiState = LoginUiState.Init
+        _loginUiState.value = LoginUiState.Init
     }
-
-
-
 }
