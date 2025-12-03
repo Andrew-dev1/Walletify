@@ -29,6 +29,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -51,9 +52,9 @@ import kotlinx.coroutines.launch
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun InitialScreen(
-    viewModel: LoginViewModel = hiltViewModel(),
+    state: LoginUiState,
     onNavigateToRegistration: () -> Unit,
-    onLoginSuccessful: () -> Unit,
+    onLogin: (String, String) -> Unit,
     onNavigateToForgetPassword: () -> Unit
 ) {
     val sheetState = rememberModalBottomSheetState(
@@ -61,6 +62,11 @@ fun InitialScreen(
     )
     var showLoginSheet by remember { mutableStateOf(false) }
 
+    LaunchedEffect(state) {
+        if (state is LoginUiState.LoginSuccess) {
+            showLoginSheet = false
+        }
+    }
 
     Box(modifier = Modifier.fillMaxSize()) {
         Column(
@@ -172,13 +178,12 @@ fun InitialScreen(
             ) {
                 LoginBottomSheet(
                     onDismiss = { showLoginSheet = false },
-                    onLoginSuccess = {
-                        showLoginSheet = false
-                        onLoginSuccessful() },
+                    onLogin = onLogin ,
                     onNavigateToPasswordReset =  {
                         showLoginSheet = false
-                        onNavigateToForgetPassword() }
-                )
+                        onNavigateToForgetPassword() },
+                    state = state
+                    )
 
             }
         }
@@ -188,9 +193,10 @@ fun InitialScreen(
 
 @Composable
 fun LoginBottomSheet(
+    state: LoginUiState,
     viewModel: LoginViewModel = hiltViewModel(),
     onDismiss: () -> Unit,
-    onLoginSuccess: () -> Unit,
+    onLogin: (String, String) -> Unit,
     onNavigateToPasswordReset: () -> Unit
 ) {
     var email by remember { mutableStateOf("") }
@@ -199,14 +205,6 @@ fun LoginBottomSheet(
 
     val coroutineScope = rememberCoroutineScope()
 
-    val uiState = viewModel.loginUiState
-
-    // Navigate on successful login
-//    LaunchedEffect(uiState) {
-//        if (uiState is LoginUiState.LoginSuccess) {
-//            onLoginSuccess()
-//        }
-//    }
 
     Column(
         modifier = Modifier
@@ -237,7 +235,7 @@ fun LoginBottomSheet(
             label = { Text("Email") },
             modifier = Modifier.fillMaxWidth(),
             singleLine = true,
-            enabled = uiState !is LoginUiState.Loading
+            enabled = state !is LoginUiState.Loading
         )
 
         OutlinedTextField(
@@ -246,24 +244,21 @@ fun LoginBottomSheet(
             label = { Text("Password") },
             modifier = Modifier.fillMaxWidth(),
             singleLine = true,
-            visualTransformation = if(showPassword){ PasswordVisualTransformation()} else VisualTransformation.None,
+            visualTransformation = if(showPassword){ VisualTransformation.None } else PasswordVisualTransformation(),
             trailingIcon = {
                 val icon = if (showPassword) Icons.Filled.VisibilityOff else Icons.Filled.Visibility
                 IconButton(onClick = { showPassword = !showPassword }) {
                     Icon(imageVector = icon, contentDescription = null)
                 }
             },
-            enabled = uiState !is LoginUiState.Loading
+            enabled = state !is LoginUiState.Loading
 
         )
 
         Button(
-            onClick = {
+            onClick = { // is coroutine needed?
                 coroutineScope.launch {
-                    val result = viewModel.loginUser(email.trim(), password.trim())
-                    if(result != null){
-                        onLoginSuccess()
-                    }
+                        onLogin(email.trim(), password.trim())
                 }
             },
             modifier = Modifier
@@ -272,11 +267,11 @@ fun LoginBottomSheet(
             colors = ButtonDefaults.buttonColors(
                 containerColor = Color(0xFF4CAF50)
             ),
-            enabled = uiState !is LoginUiState.Loading &&
+            enabled = state !is LoginUiState.Loading &&
                     email.isNotEmpty() &&
                     password.isNotEmpty()
         ) {
-            if (viewModel.loginUiState is LoginUiState.Loading) {
+            if (state is LoginUiState.Loading) {
                 CircularProgressIndicator(
                     modifier = Modifier.size(24.dp),
                     color = Color.White
@@ -296,8 +291,8 @@ fun LoginBottomSheet(
             )
         }
 
-        if (uiState is LoginUiState.Error) {
-            uiState.errorMessage?.let {
+        if (state is LoginUiState.Error) {
+            state.errorMessage?.let {
                 Text(
                     text = it,
                     color = MaterialTheme.colorScheme.error
