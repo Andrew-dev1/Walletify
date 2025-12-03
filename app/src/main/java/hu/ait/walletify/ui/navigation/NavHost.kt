@@ -13,6 +13,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -44,6 +45,9 @@ import hu.ait.walletify.ui.screens.savings.SavingsScreen
 import hu.ait.walletify.ui.screens.savings.SavingsViewModel
 import hu.ait.walletify.ui.screens.transctions.TransactionsScreen
 import hu.ait.walletify.ui.screens.transctions.TransactionsViewModel
+import kotlin.math.log
+import androidx.compose.runtime.collectAsState
+import hu.ait.walletify.ui.screens.auth.LoginUiState
 
 @Composable
 fun NavHost(modifier: Modifier) {
@@ -65,12 +69,20 @@ fun NavHost(modifier: Modifier) {
         ),
         entryProvider = entryProvider {
             entry<InitialScreenRoute> {
-                InitialScreen(
-                    onNavigateToRegistration = { backStack.add(RegistrationQuestionsScreenRoute) },
-                    onLoginSuccessful = {
-//                        backStack.removeLastOrNull()
+                val state by loginViewModel.loginUiState.collectAsStateWithLifecycle()
+
+                LaunchedEffect(state) {
+                    if (state is LoginUiState.LoginSuccess) {
+                        backStack.clear()
                         backStack.add(MainRoute)
-                    },
+                        loginViewModel.resetState()
+                    }
+                }
+
+                InitialScreen(
+                    state = state,
+                    onNavigateToRegistration = { backStack.add(RegistrationQuestionsScreenRoute) },
+                    onLogin = loginViewModel::loginUser,
                     onNavigateToForgetPassword = { backStack.add(ForgetPasswordScreenRoute) }
                 )
             }
@@ -84,24 +96,31 @@ fun NavHost(modifier: Modifier) {
                 )
             }
             entry<RegistrationCredentialsScreenRoute> {(purpose, source) ->
+                val state by loginViewModel.loginUiState.collectAsStateWithLifecycle()
+
                 RegistrationCredentialsScreen(
                     purpose = purpose,
                     source = source,
                     onComplete = { backStack.add(MainRoute)},
-                    onBack = { backStack.removeLastOrNull() }
+                    onBack = { backStack.removeLastOrNull()},
+                    onRegisterUser = (loginViewModel::registerUser),
+                    state = state
+
                 )
             }
 
             entry<ForgetPasswordScreenRoute> {
+
                 ForgetPasswordScreen(
                     onBack = { backStack.removeLastOrNull() },
-                    onReset = ({ backStack.add(MainRoute) }),
+                    onReset = (loginViewModel::forgetPassword),
                     modifier = modifier
                 )
             }
             entry<DashboardScreenRoute>{
+                val state by dashboardViewModel.state.collectAsStateWithLifecycle()
                 DashboardScreen(
-                    state = DashboardUiState.Loading,
+                    state = state,
                     modifier = modifier
                 )
             }
@@ -112,6 +131,7 @@ fun NavHost(modifier: Modifier) {
                     savingsViewModel = savingsViewModel,
                     profileViewModel = profileViewModel,
                     onLogout = {
+                        profileViewModel.logout()
                         backStack.clear()
                         loginViewModel.resetState()
                         backStack.add(InitialScreenRoute)
@@ -199,8 +219,8 @@ private fun MainScreen(
                 val state by profileViewModel.state.collectAsStateWithLifecycle()
                 ProfileScreen(
                     state = state,
-//                    onLinkPlaid = profileViewModel::linkPlaidSandbox,
-//                    onExchangePublicToken = profileViewModel::exchangePublicToken,
+                    onLinkPlaid = profileViewModel::linkPlaidSandbox,
+                    onExchangePublicToken = profileViewModel::exchangePublicToken,
                     onLogout = onLogout,
                     modifier = Modifier.padding(padding)
                 )
