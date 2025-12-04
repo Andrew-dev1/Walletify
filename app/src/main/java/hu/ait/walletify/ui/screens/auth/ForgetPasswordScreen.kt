@@ -23,15 +23,13 @@ import kotlinx.coroutines.launch
 
 @Composable
 fun ForgetPasswordScreen(
-    emailInput: String?,
+    emailInput: String,
     onReset: (String) -> Unit,
     onBack: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    var email by remember { mutableStateOf("") }
+    var email by remember { mutableStateOf(if (emailInput!= "")emailInput else "") }
 
-    if(emailInput != null)
-        email = emailInput
 
     val coroutineScope = rememberCoroutineScope()
 
