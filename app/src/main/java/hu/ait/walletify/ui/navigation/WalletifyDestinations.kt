@@ -11,7 +11,9 @@ import kotlinx.serialization.Serializable
 data object InitialScreenRoute: NavKey
 
 @Serializable
-data object ForgetPasswordScreenRoute: NavKey
+data class ForgetPasswordScreenRoute(
+    val email:String?
+): NavKey
 
 @Serializable
 data object RegistrationQuestionsScreenRoute: NavKey
@@ -24,6 +26,9 @@ data class RegistrationCredentialsScreenRoute(
 
 @Serializable
 data object DashboardScreenRoute: NavKey
+
+@Serializable
+data object ConnectBankScreen : NavKey
 
 // later swaps
 @Serializable

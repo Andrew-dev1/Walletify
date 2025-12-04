@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Clear
@@ -22,6 +23,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -38,25 +40,27 @@ import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
+import kotlinx.coroutines.launch
 
 @Composable
 fun RegistrationCredentialsScreen(
     purpose: String,
     source: String,
     onComplete: () -> Unit,
+    onRegisterUser: (String, String, String, String, String) -> Unit,
     onBack: () -> Unit,
-    viewModel: LoginViewModel = hiltViewModel()
+    state: LoginUiState
 ) {
+    var name by remember { mutableStateOf("") }
     var email by rememberSaveable { mutableStateOf("") }
     var password by rememberSaveable { mutableStateOf("") }
     var confirmPassword by rememberSaveable { mutableStateOf("") }
 
-    val uiState = viewModel.loginUiState
 
     // Handle registration success
-    LaunchedEffect(uiState) {
-        if (uiState is LoginUiState.RegisterSuccess) {
-            onComplete() // Navigate to dashboard
+    LaunchedEffect(state) {
+        if (state is LoginUiState.RegisterSuccess) {
+            onComplete()
         }
     }
 
@@ -82,6 +86,19 @@ fun RegistrationCredentialsScreen(
         )
 
         OutlinedTextField(
+            value = name,
+            onValueChange = { name = it },
+            label = { Text("Full name") },
+            modifier = Modifier.fillMaxWidth(),
+            singleLine = true,
+            shape = RoundedCornerShape(12.dp),
+            colors = OutlinedTextFieldDefaults.colors(
+                focusedBorderColor = Color(0xFF4CAF50),
+                focusedLabelColor = Color(0xFF4CAF50)
+            )
+        )
+
+        OutlinedTextField(
             value = email,
             onValueChange = { email = it },
             label = { Text("Email") },
@@ -89,7 +106,7 @@ fun RegistrationCredentialsScreen(
                 .fillMaxWidth()
                 .padding(bottom = 16.dp),
             singleLine = true,
-            enabled = uiState !is LoginUiState.Loading
+            enabled = state !is LoginUiState.Loading
         )
 
         var showPassword by remember {mutableStateOf(false)}
@@ -110,7 +127,7 @@ fun RegistrationCredentialsScreen(
                     Icon(imageVector = icon, contentDescription = null)
                 }
             },
-            enabled = uiState !is LoginUiState.Loading
+            enabled = state !is LoginUiState.Loading
         )
 
         var showPasswordConfirm by remember {mutableStateOf(false)}
@@ -129,7 +146,7 @@ fun RegistrationCredentialsScreen(
                     Icon(imageVector = icon, contentDescription = null)
                 }
             },
-            enabled = uiState !is LoginUiState.Loading,
+            enabled = state !is LoginUiState.Loading,
             isError = confirmPassword.isNotEmpty() && password != confirmPassword
         )
         Spacer(modifier = Modifier.height(16.dp))
@@ -154,9 +171,9 @@ fun RegistrationCredentialsScreen(
             }
         }
 
-        if (uiState is LoginUiState.Error) {
+        if (state is LoginUiState.Error) {
             Text(
-                text = uiState.errorMessage ?: "Registration failed",
+                text = state.errorMessage ?: "Registration failed",
                 color = MaterialTheme.colorScheme.error,
                 fontSize = 12.sp,
                 modifier = Modifier.padding(start = 16.dp, top = 8.dp)
@@ -173,17 +190,15 @@ fun RegistrationCredentialsScreen(
                 modifier = Modifier
                     .weight(1f)
                     .height(56.dp),
-                enabled = uiState !is LoginUiState.Loading
+                enabled = state !is LoginUiState.Loading
             ) {
                 Text("Back")
             }
 
             Button(
                 onClick = {
-                    viewModel.registerUser(
-                        email, password,
-                        purpose,
-                        source)
+                        onRegisterUser(name.trim(), email.trim(),
+                            password.trim(), source, purpose)
                 },
                 modifier = Modifier
                     .weight(1f)
@@ -191,13 +206,13 @@ fun RegistrationCredentialsScreen(
                 colors = ButtonDefaults.buttonColors(
                     containerColor = Color(0xFF4CAF50)
                 ),
-                enabled = uiState !is LoginUiState.Loading &&
+                enabled = state !is LoginUiState.Loading &&
                         email.isNotEmpty() &&
                         password.isNotEmpty() &&
                         password == confirmPassword &&
                         isPasswordValid(password)
             ) {
-                if (uiState is LoginUiState.Loading) {
+                if (state is LoginUiState.Loading) {
                     CircularProgressIndicator(
                         modifier = Modifier.size(24.dp),
                         color = Color.White

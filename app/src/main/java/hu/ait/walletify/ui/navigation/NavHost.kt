@@ -21,7 +21,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
-import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.lifecycle.viewmodel.navigation3.rememberViewModelStoreNavEntryDecorator
@@ -37,7 +36,6 @@ import hu.ait.walletify.ui.screens.auth.InitialScreen
 import hu.ait.walletify.ui.screens.auth.LoginViewModel
 import hu.ait.walletify.ui.screens.auth.RegistrationCredentialsScreen
 import hu.ait.walletify.ui.screens.auth.RegistrationQuestionsScreen
-import hu.ait.walletify.ui.screens.dashboard.DashboardUiState
 import hu.ait.walletify.ui.screens.dashboard.DashboardViewModel
 import hu.ait.walletify.ui.screens.profile.ProfileScreen
 import hu.ait.walletify.ui.screens.profile.ProfileViewModel
@@ -45,8 +43,6 @@ import hu.ait.walletify.ui.screens.savings.SavingsScreen
 import hu.ait.walletify.ui.screens.savings.SavingsViewModel
 import hu.ait.walletify.ui.screens.transctions.TransactionsScreen
 import hu.ait.walletify.ui.screens.transctions.TransactionsViewModel
-import kotlin.math.log
-import androidx.compose.runtime.collectAsState
 import hu.ait.walletify.ui.screens.auth.LoginUiState
 
 @Composable
@@ -83,11 +79,12 @@ fun NavHost(modifier: Modifier) {
                     state = state,
                     onNavigateToRegistration = { backStack.add(RegistrationQuestionsScreenRoute) },
                     onLogin = loginViewModel::loginUser,
-                    onNavigateToForgetPassword = { backStack.add(ForgetPasswordScreenRoute) }
+                    onNavigateToForgetPassword = { backStack.add(ForgetPasswordScreenRoute(email = it)) }
                 )
             }
             entry<RegistrationQuestionsScreenRoute> {
                 RegistrationQuestionsScreen(
+
                     onNext = { purpose, source ->
                         backStack.add(
                             RegistrationCredentialsScreenRoute(purpose,source)
@@ -112,6 +109,7 @@ fun NavHost(modifier: Modifier) {
             entry<ForgetPasswordScreenRoute> {
 
                 ForgetPasswordScreen(
+                    emailInput = it.email,
                     onBack = { backStack.removeLastOrNull() },
                     onReset = (loginViewModel::forgetPassword),
                     modifier = modifier
