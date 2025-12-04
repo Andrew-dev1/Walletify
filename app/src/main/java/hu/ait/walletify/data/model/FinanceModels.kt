@@ -93,7 +93,9 @@ data class UserProfile(
     val name: String,
     val email: String,
     val householdMembers: Int,
-    val pushNotificationsEnabled: Boolean
+    val pushNotificationsEnabled: Boolean,
+    val purpose: String,
+    val source: String
 )
 
 

@@ -1,6 +1,5 @@
 package hu.ait.walletify.ui.screens.auth
 
-import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -20,17 +19,20 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
 
 @Composable
 fun ForgetPasswordScreen(
+    emailInput: String?,
     onReset: (String) -> Unit,
     onBack: () -> Unit,
     modifier: Modifier = Modifier,
-    viewModel: LoginViewModel = hiltViewModel()
 ) {
     var email by remember { mutableStateOf("") }
+
+    if(emailInput != null)
+        email = emailInput
+
     val coroutineScope = rememberCoroutineScope()
 
     Column(
@@ -60,9 +62,8 @@ fun ForgetPasswordScreen(
             onClick = {
                 emailSent = false
                 coroutineScope.launch {
-                    if(viewModel.forgetPassword(email.trim())){
-                        emailSent = true
-                    }
+                    onReset(email.trim())
+                    emailSent = true
 
                 }
                       },

@@ -52,9 +52,10 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import hu.ait.walletify.data.model.DashboardSnapshot
 
 
-    // have charts
+// have charts
 
     // menu below with options
     /*
@@ -93,7 +94,9 @@ data class MonthlyData(
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun DashboardScreen(state: DashboardUiState, modifier: Modifier) {
+fun DashboardScreen(
+    state: DashboardUiState,
+    modifier: Modifier) {
 
     when (state) {
         DashboardUiState.Loading -> Box(
@@ -122,15 +125,14 @@ fun DashboardScreen(state: DashboardUiState, modifier: Modifier) {
             }
         }
         is DashboardUiState.Data -> DashboardContent(
-            state = state,
-//            snapshot = state.snapshot,
+            snapshot = state.snapshot,
             modifier = modifier
         )
     }
 }
 @Composable
 fun DashboardContent(
-    state: DashboardUiState,
+    snapshot: DashboardSnapshot,
     modifier:Modifier
 ) {
 

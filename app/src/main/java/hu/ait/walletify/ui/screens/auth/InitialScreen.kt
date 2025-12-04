@@ -55,7 +55,7 @@ fun InitialScreen(
     state: LoginUiState,
     onNavigateToRegistration: () -> Unit,
     onLogin: (String, String) -> Unit,
-    onNavigateToForgetPassword: () -> Unit
+    onNavigateToForgetPassword: (String) -> Unit
 ) {
     val sheetState = rememberModalBottomSheetState(
         skipPartiallyExpanded = true
@@ -179,9 +179,9 @@ fun InitialScreen(
                 LoginBottomSheet(
                     onDismiss = { showLoginSheet = false },
                     onLogin = onLogin ,
-                    onNavigateToPasswordReset =  {
+                    onNavigateToPasswordReset =  {email -> // Navigate to password reset screen
                         showLoginSheet = false
-                        onNavigateToForgetPassword() },
+                        onNavigateToForgetPassword(email) },
                     state = state
                     )
 
@@ -194,10 +194,9 @@ fun InitialScreen(
 @Composable
 fun LoginBottomSheet(
     state: LoginUiState,
-    viewModel: LoginViewModel = hiltViewModel(),
     onDismiss: () -> Unit,
     onLogin: (String, String) -> Unit,
-    onNavigateToPasswordReset: () -> Unit
+    onNavigateToPasswordReset: (String) -> Unit
 ) {
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
@@ -284,7 +283,7 @@ fun LoginBottomSheet(
 
         TextButton(onClick = {
             onDismiss() // Close the sheet
-            onNavigateToPasswordReset() // Navigate to full password reset screen
+            onNavigateToPasswordReset(email) // Navigate to full password reset screen
         }) {
             Text("Forgot Password?",
                 color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.6f)
