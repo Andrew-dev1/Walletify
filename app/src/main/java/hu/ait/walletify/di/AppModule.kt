@@ -41,7 +41,10 @@ abstract class AppModule {
         @Provides
         @Singleton
         fun provideFirebaseFunctions(): FirebaseFunctions =
-            FirebaseFunctions.getInstance()
+        // If your Firebase Functions are deployed to a different region,
+        // change this to: FirebaseFunctions.getInstance("your-region")
+        // Common regions: "us-central1", "us-east1", "europe-west1", "asia-northeast1"
+        FirebaseFunctions.getInstance()
     }
 
 }
