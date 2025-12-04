@@ -12,7 +12,7 @@ data object InitialScreenRoute: NavKey
 
 @Serializable
 data class ForgetPasswordScreenRoute(
-    val email:String?
+    val email:String
 ): NavKey
 
 @Serializable
