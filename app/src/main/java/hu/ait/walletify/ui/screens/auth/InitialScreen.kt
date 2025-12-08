@@ -198,8 +198,8 @@ fun LoginBottomSheet(
     onLogin: (String, String) -> Unit,
     onNavigateToPasswordReset: (String) -> Unit
 ) {
-    var email by remember { mutableStateOf("") }
-    var password by remember { mutableStateOf("") }
+    var email by remember { mutableStateOf("test2@gmail.com") }
+    var password by remember { mutableStateOf("12345As!") }
     var showPassword by remember { mutableStateOf(false) }
 
     val coroutineScope = rememberCoroutineScope()

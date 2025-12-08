@@ -28,7 +28,7 @@ data class RegistrationCredentialsScreenRoute(
 data object DashboardScreenRoute: NavKey
 
 @Serializable
-data object ConnectBankScreen : NavKey
+data object ConnectBankScreenRoute : NavKey
 
 // later swaps
 @Serializable

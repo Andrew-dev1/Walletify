@@ -30,6 +30,8 @@ import androidx.navigation3.runtime.rememberSavedStateNavEntryDecorator
 import androidx.navigation3.scene.rememberSceneSetupNavEntryDecorator
 import androidx.navigation3.ui.NavDisplay
 import hu.ait.walletify.ui.components.WalletifyBottomBar
+import hu.ait.walletify.ui.plaid.ConnectBankScreen
+import hu.ait.walletify.ui.plaid.PlaidViewModel
 import hu.ait.walletify.ui.screens.dashboard.DashboardScreen
 import hu.ait.walletify.ui.screens.auth.ForgetPasswordScreen
 import hu.ait.walletify.ui.screens.auth.InitialScreen
@@ -53,6 +55,7 @@ fun NavHost(modifier: Modifier) {
     val savingsViewModel: SavingsViewModel = viewModel()
     val profileViewModel: ProfileViewModel = viewModel()
     val loginViewModel: LoginViewModel = viewModel()
+    val plaidViewModel: PlaidViewModel = viewModel()
 
     NavDisplay(
         //modifier = modifier,
@@ -70,7 +73,7 @@ fun NavHost(modifier: Modifier) {
                 LaunchedEffect(state) {
                     if (state is LoginUiState.LoginSuccess) {
                         backStack.clear()
-                        backStack.add(MainRoute)
+                        backStack.add(ConnectBankScreenRoute)
                         loginViewModel.resetState()
                     }
                 }
@@ -95,14 +98,39 @@ fun NavHost(modifier: Modifier) {
             entry<RegistrationCredentialsScreenRoute> {(purpose, source) ->
                 val state by loginViewModel.loginUiState.collectAsStateWithLifecycle()
 
+                LaunchedEffect(state) {
+                    if (state is LoginUiState.RegisterSuccess) {
+                        backStack.clear()
+                        backStack.add(ConnectBankScreenRoute)
+                        loginViewModel.resetState()
+                    }
+                }
+
                 RegistrationCredentialsScreen(
                     purpose = purpose,
                     source = source,
-                    onComplete = { backStack.add(MainRoute)},
+                    onComplete = { }, /* Moved Navigation to LaunchedEffect */
                     onBack = { backStack.removeLastOrNull()},
                     onRegisterUser = (loginViewModel::registerUser),
                     state = state
 
+                )
+            }
+
+            entry<ConnectBankScreenRoute> {
+                val state by plaidViewModel.plaidUiState.collectAsStateWithLifecycle()
+
+                ConnectBankScreen(
+                    state= state,
+                    viewModel = plaidViewModel,
+                    onConnected = {
+                        backStack.clear()
+                        backStack.add(MainRoute)
+                    },
+                    onSkip = {
+                        backStack.clear()
+                        backStack.add(MainRoute)
+                    }
                 )
             }
 

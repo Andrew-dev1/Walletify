@@ -109,7 +109,9 @@ dependencies {
     implementation(libs.okhttp)
     implementation(libs.okhttp.logging)
     testImplementation(libs.kotlinx.coroutines.test)
-    implementation(libs.sdk.core)
+
+    implementation("io.reactivex.rxjava3:rxandroid:3.0.0")
+    implementation(libs.plaid.link)
     implementation("com.google.firebase:firebase-functions-ktx:20.4.0")
 
 }
