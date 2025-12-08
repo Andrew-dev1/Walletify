@@ -12,6 +12,7 @@ import hu.ait.walletify.data.repository.AuthRepository
 import hu.ait.walletify.data.repository.FakeFinanceRepository
 import hu.ait.walletify.data.repository.FinanceRepository
 import hu.ait.walletify.data.repository.FirebaseAuthRepository
+
 import javax.inject.Singleton
 
 
@@ -44,8 +45,12 @@ abstract class AppModule {
         // If your Firebase Functions are deployed to a different region,
         // change this to: FirebaseFunctions.getInstance("your-region")
         // Common regions: "us-central1", "us-east1", "europe-west1", "asia-northeast1"
-        FirebaseFunctions.getInstance()
+        FirebaseFunctions.getInstance("us-central1")
     }
+
+
+
+
 
 }
 
