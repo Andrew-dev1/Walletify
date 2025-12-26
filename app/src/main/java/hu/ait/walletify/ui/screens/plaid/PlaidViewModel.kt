@@ -33,49 +33,60 @@ class PlaidViewModel @Inject constructor(
     var plaidUiState: StateFlow<PlaidUiState> = _plaidUiState.asStateFlow()
 
 
+    /**
+     * Creates a Plaid link token by calling the Cloud Function.
+     * Updates UI state to Loading, then LinkTokenReceived on success, or Error on failure.
+     */
     fun createLinkToken() {
-//        var result = "first"
         viewModelScope.launch {
             _plaidUiState.value = PlaidUiState.Loading
-            Log.d("plaidRepository", "createLinkToken button clicked")
+            Log.d("PlaidViewModel", "Creating link token...")
 
             plaidRepository.createLinkToken()
                 .onSuccess { linkToken ->
-                    _plaidUiState.value  = PlaidUiState.LinkTokenReceived(linkToken)
+                    Log.d("PlaidViewModel", "Link token received successfully")
+                    _plaidUiState.value = PlaidUiState.LinkTokenReceived(linkToken)
                 }
                 .onFailure { error ->
-                    _plaidUiState.value  = PlaidUiState.Error(
+                    Log.e("PlaidViewModel", "Failed to create link token", error)
+                    _plaidUiState.value = PlaidUiState.Error(
                         error.localizedMessage ?: "Failed to create link token"
                     )
                 }
-//            result = plaidRepository.createLinkToken2()
-//            if(result == ""){
-//                _plaidUiState.value  = PlaidUiState.Error("Failed to create link token")
-//            }else{
-//                _plaidUiState.value  = PlaidUiState.LinkTokenReceived(result)
-//            }
         }
-//        return result
     }
 
+    /**
+     * Exchanges the public token received from Plaid Link for an access token.
+     * Updates UI state to Loading, then Connected on success, or Error on failure.
+     * 
+     * @param publicToken The public token received from Plaid Link success callback
+     */
     fun exchangePublicToken(publicToken: String) {
         viewModelScope.launch {
-            _plaidUiState.value  = PlaidUiState.Loading
+            _plaidUiState.value = PlaidUiState.Loading
+            Log.d("PlaidViewModel", "Exchanging public token...")
 
             plaidRepository.exchangePublicToken(publicToken)
                 .onSuccess { itemId ->
-                    _plaidUiState.value  = PlaidUiState.Connected(itemId)
+                    Log.d("PlaidViewModel", "Public token exchanged successfully, itemId: $itemId")
+                    _plaidUiState.value = PlaidUiState.Connected(itemId)
                 }
                 .onFailure { error ->
-                    _plaidUiState.value  = PlaidUiState.Error(
+                    Log.e("PlaidViewModel", "Failed to exchange public token", error)
+                    _plaidUiState.value = PlaidUiState.Error(
                         error.localizedMessage ?: "Failed to connect account"
                     )
                 }
         }
     }
 
+    /**
+     * Resets the Plaid UI state to Idle.
+     * Called when user cancels or exits Plaid Link flow.
+     */
     fun resetState() {
-        _plaidUiState.value  = PlaidUiState.Idle
+        _plaidUiState.value = PlaidUiState.Idle
     }
 }
 
