@@ -26,8 +26,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.lifecycle.viewmodel.navigation3.rememberViewModelStoreNavEntryDecorator
 import androidx.navigation3.runtime.entryProvider
 import androidx.navigation3.runtime.rememberNavBackStack
-import androidx.navigation3.runtime.rememberSavedStateNavEntryDecorator
-import androidx.navigation3.scene.rememberSceneSetupNavEntryDecorator
+import androidx.navigation3.runtime.rememberSaveableStateHolderNavEntryDecorator
 import androidx.navigation3.ui.NavDisplay
 import hu.ait.walletify.ui.components.WalletifyBottomBar
 import hu.ait.walletify.ui.plaid.ConnectBankScreen
@@ -62,8 +61,7 @@ fun NavHost(modifier: Modifier) {
         backStack = backStack,
         onBack = { backStack.removeLastOrNull() },
         entryDecorators = listOf(
-            rememberSceneSetupNavEntryDecorator(),
-            rememberSavedStateNavEntryDecorator(),
+            rememberSaveableStateHolderNavEntryDecorator(),
             rememberViewModelStoreNavEntryDecorator()
         ),
         entryProvider = entryProvider {
@@ -109,7 +107,7 @@ fun NavHost(modifier: Modifier) {
                 RegistrationCredentialsScreen(
                     purpose = purpose,
                     source = source,
-                    onComplete = { }, /* Moved Navigation to LaunchedEffect */
+                    onComplete = { },
                     onBack = { backStack.removeLastOrNull()},
                     onRegisterUser = (loginViewModel::registerUser),
                     state = state

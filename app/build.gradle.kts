@@ -1,4 +1,3 @@
-import java.util.Properties
 // import kotlin.apply
 
 plugins {
@@ -8,25 +7,11 @@ plugins {
 
     alias(libs.plugins.jetbrains.kotlin.serialization)
     alias(libs.plugins.ksp)
-    alias(libs.plugins.kotlin.kapt)
     alias(libs.plugins.hilt.gradle)
     alias(libs.plugins.google.gms.google.services)
 }
-val localProperties = Properties().apply {
-    val file = rootProject.file("local.properties")
-    if (file.exists()) {
-        file.inputStream().use(::load)
-    }
-}
 
-fun getSecret(name: String, defaultValue: String = ""): String {
-    val value = localProperties.getProperty(name) ?: System.getenv(name) ?: defaultValue
-    return value.trim()
-}
 
-val plaidClientId = getSecret("PLAID_CLIENT_ID")
-val plaidSecret = getSecret("PLAID_SECRET")
-val plaidClientName = getSecret("PLAID_CLIENT_NAME", "Walletify")
 
 android {
     namespace = "hu.ait.walletify"
@@ -42,10 +27,7 @@ android {
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
-        buildConfigField("String", "PLAID_CLIENT_ID", "\"$plaidClientId\"")
-        buildConfigField("String", "PLAID_SECRET", "\"$plaidSecret\"")
-        buildConfigField("String", "PLAID_CLIENT_NAME", "\"$plaidClientName\"")
-        buildConfigField("String", "PLAID_ENV", "\"sandbox\"")
+
     }
 
     buildTypes {
@@ -61,12 +43,15 @@ android {
         sourceCompatibility = JavaVersion.VERSION_11
         targetCompatibility = JavaVersion.VERSION_11
     }
-    kotlinOptions {
-        jvmTarget = "11"
-    }
+
     buildFeatures {
         compose = true
         buildConfig = true
+    }
+}
+kotlin {
+    compilerOptions {
+        jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_11)
     }
 }
 
@@ -74,6 +59,9 @@ dependencies {
 
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
+    implementation(libs.androidx.lifecycle.runtime.compose)
+    implementation(libs.androidx.lifecycle.viewmodel.ktx)
+    implementation(libs.androidx.lifecycle.viewmodel.compose)
     implementation(libs.androidx.activity.compose)
     implementation(platform(libs.androidx.compose.bom))
     implementation(libs.androidx.ui)
@@ -83,6 +71,7 @@ dependencies {
     implementation(libs.androidx.material.icons.extended)
     implementation(libs.firebase.auth)
     implementation(libs.firebase.firestore)
+    implementation(libs.firebase.functions)
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
@@ -99,19 +88,19 @@ dependencies {
     implementation(libs.kotlinx.serialization.core)
     // Hilt Dependency Injection
     implementation(libs.hilt.android)
-    kapt(libs.hilt.compiler)
+    ksp(libs.hilt.compiler)
     implementation(libs.androidx.hilt.navigation.compose)
-    // Retrofit
-    implementation(libs.retrofit)
+    // Kotlinx Serialization (used for navigation routes and data models)
     implementation(libs.kotlinx.serialization)
-    implementation(libs.serialization.converter)
-    // http build request to help retro and then unit testing later
-    implementation(libs.okhttp)
-    implementation(libs.okhttp.logging)
+    // Kotlin Coroutines
+    implementation(libs.kotlinx.coroutines.android)
     testImplementation(libs.kotlinx.coroutines.test)
 
-    implementation("io.reactivex.rxjava3:rxandroid:3.0.0")
     implementation(libs.plaid.link)
-    implementation("com.google.firebase:firebase-functions-ktx:20.4.0")
+    
+    // Room Database (for local caching - not actively used yet)
+    implementation(libs.androidx.room.runtime)
+    implementation(libs.androidx.room.ktx)
+    ksp(libs.androidx.room.compiler)
 
 }

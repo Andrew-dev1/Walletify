@@ -70,10 +70,10 @@ private fun TransactionsContent(
     onCategorySelected: (String?) -> Unit,
     modifier: Modifier = Modifier
 ) {
-    // Extract all unique categories from transactions
+    // Extract all unique categories from transactions (using primary category)
     val allCategories = months
         .flatMap { it.transactions }
-        .map { it.category }
+        .map { it.primaryCategory }
         .distinct()
         .sorted()
 
@@ -105,14 +105,14 @@ private fun TransactionsContent(
                     }
 
                 val filteredTransactions = if (selectedCategory != null) {
-                    monthData.transactions.filter { it.category == selectedCategory }
+                    monthData.transactions.filter { it.primaryCategory == selectedCategory }
                 } else {
                     monthData.transactions
                 }
 
                 items(
                     items = filteredTransactions,
-                    key = { it.id }
+                    key = { it.transactionId }
                 ) { transaction ->
                     TransactionItemCard(transaction = transaction)
                 }
@@ -222,7 +222,7 @@ private fun TransactionItemCard(transaction: TransactionItem) {
                     contentAlignment = Alignment.Center
                 ) {
                     Text(
-                        text = transaction.category.first().toString().uppercase(),
+                        text = transaction.primaryCategory.uppercase().take(1),
                         fontWeight = FontWeight.Bold,
                         fontSize = 16.sp,
                         color = if (transaction.isDebit) {
@@ -235,13 +235,13 @@ private fun TransactionItemCard(transaction: TransactionItem) {
 
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
-                        text = transaction.merchant,
+                        text = transaction.merchantName ?: transaction.name,
                         fontSize = 16.sp,
                         fontWeight = FontWeight.Medium,
                         color = MaterialTheme.colorScheme.onSurface
                     )
                     Text(
-                        text = "${transaction.category} • ${transaction.date}",
+                        text = "${transaction.primaryCategory} • ${transaction.formattedDate}",
                         fontSize = 12.sp,
                         color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
                         modifier = Modifier.padding(top = 4.dp)
@@ -252,7 +252,7 @@ private fun TransactionItemCard(transaction: TransactionItem) {
             Text(
                 text = "${if (transaction.isDebit) "-" else "+"}$${
                     "%.2f".format(
-                        transaction.amount
+                        kotlin.math.abs(transaction.amount)
                     )
                 }",
                 fontSize = 16.sp,

@@ -9,9 +9,9 @@ import dagger.hilt.components.SingletonComponent
 import hu.ait.walletify.data.plaid.FirebasePlaidRepository
 import hu.ait.walletify.data.plaid.PlaidRepository
 import hu.ait.walletify.data.repository.AuthRepository
-import hu.ait.walletify.data.repository.FakeFinanceRepository
 import hu.ait.walletify.data.repository.FinanceRepository
 import hu.ait.walletify.data.repository.FirebaseAuthRepository
+import hu.ait.walletify.data.repository.FirestoreFinanceRepository
 
 import javax.inject.Singleton
 
@@ -36,7 +36,7 @@ abstract class AppModule {
 
     @Binds
     @Singleton
-    abstract fun bindFinanceRepository(impl: FakeFinanceRepository): FinanceRepository
+    abstract fun bindFinanceRepository(impl: FirestoreFinanceRepository): FinanceRepository
 
     companion object {
         @Provides

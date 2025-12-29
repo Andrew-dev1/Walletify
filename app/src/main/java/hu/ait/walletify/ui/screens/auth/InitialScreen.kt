@@ -1,5 +1,6 @@
 package hu.ait.walletify.ui.screens.auth
 
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -38,6 +39,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.PasswordVisualTransformation
@@ -45,7 +47,6 @@ import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import hu.ait.walletify.R
 import kotlinx.coroutines.launch
 
@@ -98,19 +99,13 @@ fun InitialScreen(
                         .padding(bottom = 32.dp),
                     contentAlignment = Alignment.Center
                 ) {
-                    // Placeholder - replace painterResource with your actual image
-                    // Image(
-                    //     painter = painterResource(id = R.drawable.wallet_icon),
-                    //     contentDescription = "Wallet Icon",
-                    //     modifier = Modifier.size(200.dp)
-                    // )
+                     Image(
+                         painter = painterResource(id = R.drawable.logo),
+                         contentDescription = "Wallet Icon",
+                         modifier = Modifier.size(200.dp)
+                     )
 
-                    // Temporary placeholder box
-                    Surface(
-                        modifier = Modifier.size(200.dp),
-                        color = Color.LightGray,
-                        shape = MaterialTheme.shapes.medium
-                    ) {}
+
                 }
 
                 Text(

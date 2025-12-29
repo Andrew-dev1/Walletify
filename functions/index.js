@@ -115,11 +115,13 @@ exports.exchangePublicToken = onCall(async (request) => {
 
     const db = admin.firestore();
     const batch = db.batch();
+    const userId = request.auth.uid;
+    const linkedAt = admin.firestore.Timestamp.now().toMillis();
 
     // Store item data
     const itemRef = db
         .collection("users")
-        .doc(request.auth.uid)
+        .doc(userId)
         .collection("plaid_items")
         .doc(itemId);
 
@@ -132,21 +134,22 @@ exports.exchangePublicToken = onCall(async (request) => {
       last_synced: admin.firestore.FieldValue.serverTimestamp(),
     });
 
-    // Store accounts
+    // Store accounts in users/{uid}/plaid_accounts/{accountId}
+    // This matches the PlaidAccountDocument structure and allows easy querying of all user accounts
     accountsResponse.data.accounts.forEach((account) => {
-      const accountRef = itemRef
-          .collection("accounts")
+      const plaidAccountRef = db
+          .collection("users")
+          .doc(userId)
+          .collection("plaid_accounts")
           .doc(account.account_id);
 
-      batch.set(accountRef, {
-        account_id: account.account_id,
-        name: account.name,
+      batch.set(plaidAccountRef, {
+        accountId: account.account_id,
+        accountName: account.name,
+        institutionName: institutionName,
         type: account.type,
-        subtype: account.subtype,
-        mask: account.mask,
-        current_balance: account.balances.current,
-        available_balance: account.balances.available,
-        currency: account.balances.iso_currency_code,
+        balance: account.balances.current || 0.0,
+        linkedAt: linkedAt,
       });
     });
 

@@ -6,6 +6,7 @@ import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.auth
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.protobuf.sourceContext
+import hu.ait.walletify.data.model.UserDocument
 import hu.ait.walletify.data.model.UserProfile
 import hu.ait.walletify.ui.screens.auth.LoginUiState
 import kotlinx.coroutines.delay
@@ -74,8 +75,8 @@ class FirebaseAuthRepository @Inject constructor(
 
             // Create user profile
             val profile = UserProfile(
-                id = userId,
-                name = name,
+                uid = userId,
+                displayName = name,
                 email = email,
                 householdMembers = 1,
                 pushNotificationsEnabled = true,
@@ -108,15 +109,18 @@ class FirebaseAuthRepository @Inject constructor(
     }
 
     private suspend fun saveUserProfile(profile: UserProfile) {
+        val doc = UserProfile.toDocument(profile)
         firestore.collection("users")
-            .document(profile.id)
+            .document(doc.uid)
             .set(
                 mapOf(
-                    "name" to profile.name,
-                    "email" to profile.email,
-                    "householdMembers" to profile.householdMembers,
-                    "pushNotificationsEnabled" to profile.pushNotificationsEnabled,
-                    "createdAt" to System.currentTimeMillis()
+                    "displayName" to doc.displayName,
+                    "email" to doc.email,
+                    "householdMembers" to doc.householdMembers,
+                    "pushNotificationsEnabled" to doc.pushNotificationsEnabled,
+                    "source" to doc.source,
+                    "purpose" to doc.purpose,
+                    "createdAt" to doc.createdAt
                 )
             )
             .await()
@@ -129,25 +133,28 @@ class FirebaseAuthRepository @Inject constructor(
                 .get()
                 .await()
 
-            UserProfile(
-                id = userId,
-                name = document.getString("name") ?: "User",
-                email = email,
+            val doc = UserDocument(
+                uid = userId,
+                displayName = document.getString("displayName"),
+                email = document.getString("email") ?: email,
                 householdMembers = document.getLong("householdMembers")?.toInt() ?: 1,
                 pushNotificationsEnabled = document.getBoolean("pushNotificationsEnabled") ?: true,
-                source = document.getString("source") ?: "unknown source",
-                purpose = document.getString("purpose") ?: "unknown purpose"
+                source = document.getString("source") ?: "",
+                purpose = document.getString("purpose") ?: "",
+                createdAt = document.getLong("createdAt") ?: System.currentTimeMillis()
             )
+
+            UserProfile.fromDocument(doc, email)
         } catch (e: Exception) {
             // If Firestore fetch fails, create a basic profile
             UserProfile(
-                id = userId,
-                name = "User",
+                uid = userId,
+                displayName = "User",
                 email = email,
                 householdMembers = 1,
                 pushNotificationsEnabled = true,
-                purpose = "unknown purpose",
-                source = "unknown source"
+                purpose = "",
+                source = ""
             )
         }
     }

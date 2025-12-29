@@ -153,7 +153,7 @@ private fun ProfileContent(
                         contentAlignment = Alignment.Center
                     ) {
                         Text(
-                            text = user.name.first().toString().uppercase(),
+                            text = user.displayName.first().toString().uppercase(),
                             fontWeight = FontWeight.Bold,
                             fontSize = 24.sp,
                             color = Color(0xFF4CAF50)
@@ -162,7 +162,7 @@ private fun ProfileContent(
 
                     Column(modifier = Modifier.weight(1f)) {
                         Text(
-                            text = user.name,
+                            text = user.displayName,
                             fontSize = 16.sp,
                             fontWeight = FontWeight.Medium,
                             color = MaterialTheme.colorScheme.onSurface
@@ -345,7 +345,7 @@ private fun ProfileContent(
                 }
             }
         } else {
-            items(accounts, key = { it.id }) { account ->
+            items(accounts, key = { it.accountId }) { account ->
                 AccountCard(account = account)
             }
         }
@@ -379,7 +379,7 @@ private fun AccountCard(account: PlaidAccount) {
                 contentAlignment = Alignment.Center
             ) {
                 Text(
-                    text = account.institution.first().toString().uppercase(),
+                    text = account.institutionName.first().toString().uppercase(),
                     fontWeight = FontWeight.Bold,
                     fontSize = 16.sp,
                     color = Color(0xFF4CAF50)
@@ -388,13 +388,13 @@ private fun AccountCard(account: PlaidAccount) {
 
             Column(modifier = Modifier.weight(1f)) {
                 Text(
-                    text = account.name,
+                    text = account.accountName,
                     fontSize = 16.sp,
                     fontWeight = FontWeight.Medium,
                     color = MaterialTheme.colorScheme.onSurface
                 )
                 Text(
-                    text = account.institution,
+                    text = account.institutionName,
                     fontSize = 12.sp,
                     color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
                     modifier = Modifier.padding(top = 4.dp)
@@ -402,7 +402,7 @@ private fun AccountCard(account: PlaidAccount) {
             }
 
             Text(
-                text = "%.2f".format(account.currentBalance),
+                text = "%.2f".format(account.balance),
                 fontSize = 16.sp,
                 fontWeight = FontWeight.SemiBold,
                 color = Color(0xFF4CAF50)

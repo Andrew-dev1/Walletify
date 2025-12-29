@@ -32,6 +32,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
@@ -39,8 +40,6 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
-import kotlinx.coroutines.launch
 
 @Composable
 fun RegistrationCredentialsScreen(
@@ -67,7 +66,7 @@ fun RegistrationCredentialsScreen(
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .padding(32.dp),
+            .padding(32.dp)
     ) {
 
         Text(
@@ -95,7 +94,8 @@ fun RegistrationCredentialsScreen(
             colors = OutlinedTextFieldDefaults.colors(
                 focusedBorderColor = Color(0xFF4CAF50),
                 focusedLabelColor = Color(0xFF4CAF50)
-            )
+            ),
+            enabled = state !is LoginUiState.Loading
         )
 
         OutlinedTextField(
@@ -103,9 +103,9 @@ fun RegistrationCredentialsScreen(
             onValueChange = { email = it },
             label = { Text("Email") },
             modifier = Modifier
-                .fillMaxWidth()
-                .padding(bottom = 16.dp),
+                .fillMaxWidth(),
             singleLine = true,
+            shape = RoundedCornerShape(12.dp),
             enabled = state !is LoginUiState.Loading
         )
 
@@ -115,8 +115,8 @@ fun RegistrationCredentialsScreen(
             onValueChange = { password = it },
             label = { Text("Password") },
             modifier = Modifier
-                .fillMaxWidth()
-                .padding(bottom = 16.dp),
+                .fillMaxWidth(),
+            shape = RoundedCornerShape(12.dp),
             singleLine = true,
             visualTransformation =
                 if (showPassword) VisualTransformation.None
@@ -136,13 +136,14 @@ fun RegistrationCredentialsScreen(
             onValueChange = { confirmPassword = it },
             label = { Text("Confirm Password") },
             modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(12.dp),
             singleLine = true,
             visualTransformation =
                 if (showPasswordConfirm) VisualTransformation.None
                 else PasswordVisualTransformation(),
             trailingIcon = {
-                val icon = if (showPassword) Icons.Filled.VisibilityOff else Icons.Filled.Visibility
-                IconButton(onClick = { showPassword = !showPassword }) {
+                val icon = if (showPasswordConfirm) Icons.Filled.VisibilityOff else Icons.Filled.Visibility
+                IconButton(onClick = { showPasswordConfirm = !showPasswordConfirm }) {
                     Icon(imageVector = icon, contentDescription = null)
                 }
             },
@@ -150,6 +151,53 @@ fun RegistrationCredentialsScreen(
             isError = confirmPassword.isNotEmpty() && password != confirmPassword
         )
         Spacer(modifier = Modifier.height(16.dp))
+
+
+
+
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(16.dp)
+        ) {
+            OutlinedButton(
+                onClick = onBack,
+                modifier = Modifier
+                    .weight(1f)
+                    .height(56.dp),
+                enabled = state !is LoginUiState.Loading
+            ) {
+                Text("Back")
+            }
+
+            Button(
+                onClick = {
+                        onRegisterUser(name.trim(), email.trim(),
+                            password.trim(), source, purpose)
+                },
+                modifier = Modifier
+                    .weight(1f)
+                    .height(56.dp),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = Color(0xFF4CAF50)
+                ),
+                enabled = state !is LoginUiState.Loading &&
+                        name.isNotEmpty() &&
+                        email.isNotEmpty() &&
+                        password.isNotEmpty() &&
+                        password == confirmPassword &&
+                        isPasswordValid(password)
+
+            ) {
+                if (state is LoginUiState.Loading) {
+                    CircularProgressIndicator(
+                        modifier = Modifier.size(24.dp),
+                        color = Color.White
+                    )
+                } else {
+                    Text("Create Account")
+                }
+            }
+        }
 
         // shows error message if password is not valid and prioritizes requirements
         when {
@@ -180,48 +228,6 @@ fun RegistrationCredentialsScreen(
             )
         }
 
-
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(16.dp)
-        ) {
-            OutlinedButton(
-                onClick = onBack,
-                modifier = Modifier
-                    .weight(1f)
-                    .height(56.dp),
-                enabled = state !is LoginUiState.Loading
-            ) {
-                Text("Back")
-            }
-
-            Button(
-                onClick = {
-                        onRegisterUser(name.trim(), email.trim(),
-                            password.trim(), source, purpose)
-                },
-                modifier = Modifier
-                    .weight(1f)
-                    .height(56.dp),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = Color(0xFF4CAF50)
-                ),
-                enabled = state !is LoginUiState.Loading &&
-                        email.isNotEmpty() &&
-                        password.isNotEmpty() &&
-                        password == confirmPassword &&
-                        isPasswordValid(password)
-            ) {
-                if (state is LoginUiState.Loading) {
-                    CircularProgressIndicator(
-                        modifier = Modifier.size(24.dp),
-                        color = Color.White
-                    )
-                } else {
-                    Text("Create Account")
-                }
-            }
-        }
     }
 }
 

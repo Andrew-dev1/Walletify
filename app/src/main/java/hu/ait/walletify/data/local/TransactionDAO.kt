@@ -8,7 +8,7 @@ interface TransactionDao {
     @Query("SELECT * FROM transactions ORDER BY date DESC")
     fun getAllTransactions(): Flow<List<TransactionEntity>>
 
-    @Query("SELECT * FROM transactions WHERE id = :transactionId")
+    @Query("SELECT * FROM transactions WHERE transactionId = :transactionId")
     suspend fun getTransactionById(transactionId: String): TransactionEntity?
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
@@ -20,7 +20,7 @@ interface TransactionDao {
     @Delete
     suspend fun deleteTransaction(transaction: TransactionEntity)
 
-    @Query("DELETE FROM transactions WHERE id = :transactionId")
+    @Query("DELETE FROM transactions WHERE transactionId = :transactionId")
     suspend fun deleteTransactionById(transactionId: String)
 
     @Query("DELETE FROM transactions")
