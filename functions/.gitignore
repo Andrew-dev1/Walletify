@@ -1,3 +1,4 @@
 node_modules/
 *.local
-.env.walletify-eb1ae.*
+.env.walletify-eb1ae
+.env.*
