@@ -66,7 +66,7 @@ fun RegistrationCredentialsScreen(
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .padding(32.dp)
+            .padding(10.dp)
     ) {
 
         Text(
