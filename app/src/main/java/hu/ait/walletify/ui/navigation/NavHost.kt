@@ -2,6 +2,7 @@ package hu.ait.walletify.ui.navigation
 
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.AddCircle
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material3.Badge
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -17,6 +18,8 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.Saver
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -45,6 +48,8 @@ import hu.ait.walletify.ui.screens.savings.SavingsViewModel
 import hu.ait.walletify.ui.screens.transctions.TransactionsScreen
 import hu.ait.walletify.ui.screens.transctions.TransactionsViewModel
 import hu.ait.walletify.ui.screens.auth.LoginUiState
+import hu.ait.walletify.ui.screens.notifications.NotificationsScreen
+import hu.ait.walletify.ui.screens.transctions.AddTransactionScreen
 
 @Composable
 fun NavHost(modifier: Modifier) {
@@ -148,12 +153,37 @@ fun NavHost(modifier: Modifier) {
                     modifier = modifier
                 )
             }
+            entry<NotificationsScreenRoute> {
+                NotificationsScreen(
+                    onReturn = { backStack.removeLastOrNull() },
+                    modifier = modifier
+                )
+            }
+            entry<AddTransactionScreenRoute> {
+                val state by transactionsViewModel.state.collectAsStateWithLifecycle()
+                AddTransactionScreen(
+                    state = state,
+                    onSave = { merchant, category, amount, isDebit ->
+                        transactionsViewModel.addManualTransaction(merchant, category, amount, isDebit)
+                        backStack.removeLastOrNull()
+                    },
+                    onCancel = { backStack.removeLastOrNull() },
+                    modifier = modifier
+                )
+            }
+
             entry<MainRoute> {
                 MainScreen(
                     dashboardViewModel = dashboardViewModel,
                     transactionsViewModel = transactionsViewModel,
                     savingsViewModel = savingsViewModel,
                     profileViewModel = profileViewModel,
+                    onNotifications = {
+                        backStack.add(NotificationsScreenRoute)
+                    },
+                    onAddTransaction = {
+                        backStack.add(AddTransactionScreenRoute)
+                    },
                     onLogout = {
                         profileViewModel.logout()
                         backStack.clear()
@@ -174,6 +204,8 @@ private fun MainScreen(
     transactionsViewModel: TransactionsViewModel,
     savingsViewModel: SavingsViewModel,
     profileViewModel: ProfileViewModel,
+    onAddTransaction: () -> Unit,
+    onNotifications: () -> Unit,
     onLogout: () -> Unit
 ) {
     val destinations = listOf<BottomDestination>(
@@ -182,10 +214,13 @@ private fun MainScreen(
         SavingsRoute,
         ProfileRoute
     )
-    var currentDestination by remember { mutableStateOf<BottomDestination>(DashboardRoute) }
+    var currentDestination by rememberSaveable(stateSaver = BottomDestinationSaver) {
+        mutableStateOf(DashboardRoute)
+    }
 
     Scaffold(
         topBar = {
+
             TopAppBar(
                 title = {
                     Text(
@@ -193,18 +228,32 @@ private fun MainScreen(
                         fontWeight = FontWeight.Bold
                     )
                 },
-                actions = {
-                    IconButton(onClick = { /* Open notifications */ }) {
-                        Badge(
-                            containerColor = Color(0xFFFF5252)
-                        ) {
+                actions = {when (currentDestination) {
+                    DashboardRoute -> {
+                        IconButton(onClick = onNotifications) {
+                            Badge(
+                                containerColor = Color(0xFFFF5252)
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.Notifications,
+                                    contentDescription = "Notifications"
+                                )
+                            }
+                        }
+                    }
+                    TransactionsRoute -> {
+                        IconButton(onClick = onAddTransaction) {
                             Icon(
-                                imageVector = Icons.Default.Notifications,
+                                imageVector = Icons.Default.AddCircle,
                                 contentDescription = "Notifications"
                             )
                         }
                     }
+                    SavingsRoute -> {}
+                    ProfileRoute -> {}
+                    }
                 },
+
                 colors = TopAppBarDefaults.topAppBarColors(
                     containerColor = MaterialTheme.colorScheme.background
                 )
@@ -252,3 +301,26 @@ private fun MainScreen(
         }
     }
 }
+
+// converts the data objects into simple type String to save easily to bundle and then back
+private val BottomDestinationSaver = Saver<BottomDestination, String>(
+    save = { destination ->
+        // Convert BottomDestination to String for saving
+        when (destination) {
+            is DashboardRoute -> "dashboard"
+            is TransactionsRoute -> "transactions"
+            is SavingsRoute -> "savings"
+            is ProfileRoute -> "profile"
+        }
+    },
+    restore = { savedLabel ->
+        // Convert String back to BottomDestination
+        when (savedLabel) {
+            "dashboard" -> DashboardRoute
+            "transactions" -> TransactionsRoute
+            "savings" -> SavingsRoute
+            "profile" -> ProfileRoute
+            else -> DashboardRoute
+        }
+    }
+)

@@ -84,10 +84,80 @@ class FirebasePlaidRepository @Inject constructor(
         val updated = (data["updated"] as? Number)?.toInt() ?: 0
         val removed = (data["removed"] as? Number)?.toInt() ?: 0
 
-            TransactionSyncResult(
+        TransactionSyncResult(
             synced = synced,
             updated = updated,
             removed = removed
+        )
+    }
+
+    /**
+     * Creates an update link token for re-authenticating an existing Plaid item.
+     * Calls the createUpdateLinkToken Cloud Function.
+     */
+    override suspend fun createUpdateLinkToken(itemId: String): Result<String> = runCatching {
+        val params = hashMapOf("itemId" to itemId)
+        val result = functions
+            .getHttpsCallable("createUpdateLinkToken")
+            .call(params)
+            .await()
+
+        val data = result.data as? Map<*, *>
+            ?: throw IllegalStateException("Invalid response format")
+
+        data["link_token"] as? String
+            ?: throw IllegalStateException("Link token not found in response")
+    }
+
+    /**
+     * Updates access token after re-authentication.
+     * Calls the updateAccessToken Cloud Function.
+     */
+    override suspend fun updateAccessToken(itemId: String, publicToken: String): Result<Boolean> = runCatching {
+        val params = hashMapOf(
+            "itemId" to itemId,
+            "publicToken" to publicToken
+        )
+        val result = functions
+            .getHttpsCallable("updateAccessToken")
+            .call(params)
+            .await()
+
+        val data = result.data as? Map<*, *>
+            ?: throw IllegalStateException("Invalid response format")
+
+        (data["success"] as? Boolean) ?: false
+    }
+
+    /**
+     * Gets the status of a Plaid item to check if re-authentication is needed.
+     * Calls the getItemStatus Cloud Function.
+     */
+    override suspend fun getItemStatus(itemId: String): Result<ItemStatusResult> = runCatching {
+        val params = hashMapOf("itemId" to itemId)
+        val result = functions
+            .getHttpsCallable("getItemStatus")
+            .call(params)
+            .await()
+
+        val data = result.data as? Map<*, *>
+            ?: throw IllegalStateException("Invalid response format")
+
+        val status = data["status"] as? String ?: "unknown"
+        val requiresReauth = (data["requiresReauth"] as? Boolean) ?: false
+        
+        val errorMap = data["error"] as? Map<*, *>
+        val error = errorMap?.let {
+            ItemError(
+                errorCode = it["error_code"] as? String ?: "",
+                errorMessage = it["error_message"] as? String
+            )
+        }
+
+        ItemStatusResult(
+            status = status,
+            requiresReauth = requiresReauth,
+            error = error
         )
     }
 }

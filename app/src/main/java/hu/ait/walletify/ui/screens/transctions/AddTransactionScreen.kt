@@ -14,7 +14,12 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ExposedDropdownMenuBox
+import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.MenuAnchorType
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -27,8 +32,10 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AddTransactionScreen(
+    state: TransactionsUiState,
     onSave: (String, String, Double, Boolean) -> Unit,
     onCancel: () -> Unit,
     modifier: Modifier = Modifier
@@ -37,6 +44,18 @@ fun AddTransactionScreen(
     var category by remember { mutableStateOf("") }
     var amount by remember { mutableStateOf("") }
     var isDebit by remember { mutableStateOf(true) }
+    var expandedCategory by remember { mutableStateOf(false) }
+
+    val allCategories = if (state is TransactionsUiState.Data) {
+        state.months
+            .flatMap { it.transactions }
+            .map { it.primaryCategory }
+            .distinct()
+            .sorted()
+    } else {
+        emptyList()
+    }
+
 
     Column(
         modifier = modifier
@@ -75,14 +94,49 @@ fun AddTransactionScreen(
                     singleLine = true
                 )
 
-                OutlinedTextField(
-                    value = category,
-                    onValueChange = { category = it },
-                    label = { Text("Category") },
-                    modifier = Modifier.fillMaxWidth(),
-                    singleLine = true,
-                    placeholder = { Text("e.g., Food, Transport, Entertainment") }
-                )
+//                OutlinedTextField(
+//                    value = category,
+//                    onValueChange = { category = it },
+//                    label = { Text("Category") },
+//                    modifier = Modifier.fillMaxWidth(),
+//                    singleLine = true,
+//                    placeholder = { Text("e.g., Food, Transport, Entertainment") }
+//                )
+                ExposedDropdownMenuBox(
+                    expanded = expandedCategory,
+                    onExpandedChange = { expandedCategory = it }
+                ) {
+                    OutlinedTextField(
+                        value = category,
+                        onValueChange = { category = it },
+                        label = { Text("Category") },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .menuAnchor(MenuAnchorType.PrimaryNotEditable, true),
+                        singleLine = true,
+                        placeholder = { Text("e.g., Food, Transport, Entertainment") },
+                        trailingIcon = {
+                            ExposedDropdownMenuDefaults.TrailingIcon(expanded = expandedCategory)
+                        }
+                    )
+
+                    if (allCategories.isNotEmpty()) {
+                        ExposedDropdownMenu(
+                            expanded = expandedCategory,
+                            onDismissRequest = { expandedCategory = false }
+                        ) {
+                            allCategories.forEach { categoryOption ->
+                                DropdownMenuItem(
+                                    text = { Text(categoryOption) },
+                                    onClick = {
+                                        category = categoryOption
+                                        expandedCategory = false
+                                    }
+                                )
+                            }
+                        }
+                    }
+                }
 
                 OutlinedTextField(
                     value = amount,

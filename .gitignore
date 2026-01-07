@@ -126,3 +126,7 @@ ui-debug.log
 
 # Virtual machine crash logs
 hs_err_pid*
+
+#personal files
+Security.md
+PLAID_PRODUCTION_FEATURES.md

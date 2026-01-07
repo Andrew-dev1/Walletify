@@ -30,6 +30,13 @@ data object DashboardScreenRoute: NavKey
 @Serializable
 data object ConnectBankScreenRoute : NavKey
 
+@Serializable
+data object NotificationsScreenRoute : NavKey
+
+@Serializable
+data object AddTransactionScreenRoute : NavKey
+
+
 // later swaps
 @Serializable
 data object MainRoute : NavKey

@@ -1,8 +1,11 @@
 package hu.ait.walletify.data.repository
 
+import android.util.Log
 import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.Query
+import hu.ait.walletify.data.model.MonthlyTransactions
 import hu.ait.walletify.data.model.TransactionDocument
 import hu.ait.walletify.data.model.TransactionItem
 import kotlinx.coroutines.channels.awaitClose
@@ -33,7 +36,7 @@ class FirestoreTransactionRepository @Inject constructor(
      * Returns a Flow that emits updated lists when transactions change.
      * Returns empty list if user is not authenticated.
      */
-    fun observeTransactions(): Flow<List<hu.ait.walletify.data.model.MonthlyTransactions>> {
+    fun observeTransactions(): Flow<List<MonthlyTransactions>> {
         return callbackFlow {
             var registration: com.google.firebase.firestore.ListenerRegistration? = null
             
@@ -97,6 +100,7 @@ class FirestoreTransactionRepository @Inject constructor(
      * Adds a new transaction to Firestore.
      */
     suspend fun addTransaction(transaction: TransactionItem) {
+        Log.d("FirestoreTransactionRepository", "Adding transaction: $transaction")
         val currentUserId = userId ?: throw IllegalStateException("User must be authenticated")
         val doc = TransactionItem.toDocument(transaction)
         firestore
@@ -118,6 +122,7 @@ class FirestoreTransactionRepository @Inject constructor(
                 )
             )
             .await()
+
     }
 
     /**

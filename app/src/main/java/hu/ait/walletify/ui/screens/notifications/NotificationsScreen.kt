@@ -105,7 +105,7 @@ fun NotificationsScreen(
             ,
                 actions = {
                     IconButton(
-                        onClick = { onReturn },
+                        onClick = onReturn,
                         modifier = Modifier,
                     ) {
                         Icon(
