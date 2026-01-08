@@ -1,5 +1,6 @@
 package hu.ait.walletify.ui.screens.profile
 
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -57,6 +58,63 @@ class ProfileViewModel @Inject constructor(
                         statusMessage = (existing as? ProfileUiState.Data)?.statusMessage
                     )
                 }
+            }
+        }
+    }
+
+    fun updateProfile(displayName: String, householdMembers: Int) {
+        viewModelScope.launch {
+            val current = _state.value as? ProfileUiState.Data ?: return@launch
+
+            try {
+                authRepository.updateUserProfile(displayName, householdMembers)
+                _state.value = current.copy(
+                    statusMessage = "Profile updated successfully!"
+                )
+            } catch (e: Exception) {
+                _state.value = current.copy(
+                    statusMessage = e.message ?: "Failed to update profile"
+                )
+            }
+        }
+    }
+
+    fun toggleNotifications(enabled: Boolean) {
+        viewModelScope.launch {
+            val current = _state.value as? ProfileUiState.Data ?: return@launch
+
+            try {
+                authRepository.updateNotificationSettings(enabled)
+                _state.value = current.copy(
+                    statusMessage = "Notifications ${if (enabled) "enabled" else "disabled"}"
+                )
+            } catch (e: Exception) {
+                _state.value = current.copy(
+                    statusMessage = e.message ?: "Failed to update notifications"
+                )
+            }
+        }
+    }
+
+    fun changePassword(oldPassword: String, newPassword: String) {
+        viewModelScope.launch {
+            val current = _state.value as? ProfileUiState.Data ?: return@launch
+
+            try {
+                authRepository.changePassword(oldPassword, newPassword)
+                _state.value = current.copy(
+                    statusMessage = "Password changed successfully!"
+                )
+            } catch (e: Exception) {
+                val message = when {
+                    e.message?.contains("password") == true -> "Incorrect current password"
+                    e.message?.contains("weak") == true -> "New password is too weak"
+                    else -> e.message ?: "Failed to change password"
+                }
+                Log.d("ProfileViewModel", "changePassword: $message")
+                _state.value = current.copy(
+                    statusMessage = message
+                )
             }
         }
     }

@@ -294,6 +294,9 @@ private fun MainScreen(
                     state = state,
                     onLinkPlaid = profileViewModel::linkPlaidSandbox,
                     onExchangePublicToken = profileViewModel::exchangePublicToken,
+                    onUpdateProfile = profileViewModel::updateProfile,
+                    onToggleNotifications = profileViewModel::toggleNotifications,
+                    onChangePassword = profileViewModel::changePassword,
                     onLogout = onLogout,
                     modifier = Modifier.padding(padding)
                 )

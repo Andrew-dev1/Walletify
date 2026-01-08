@@ -1,7 +1,6 @@
 package hu.ait.walletify.data.repository
 
-import com.google.firebase.Firebase
-import com.google.firebase.auth.AuthResult
+
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.auth
 import com.google.firebase.firestore.FirebaseFirestore
@@ -29,6 +28,9 @@ interface AuthRepository {
                          String, purpose: String): Result<UserProfile>
     suspend fun sendPasswordReset(email: String): Result<Unit>
     fun logout()
+    suspend fun updateNotificationSettings(enabled: Boolean)
+    suspend fun updateUserProfile(displayName: String, householdMembers: Int)
+    suspend fun changePassword(oldPassword: String, newPassword: String)
 }
 
 @Singleton
@@ -106,6 +108,71 @@ class FirebaseAuthRepository @Inject constructor(
     override fun logout() {
         auth.signOut()
         userState.value = null
+    }
+
+    override suspend fun updateNotificationSettings(enabled: Boolean) {
+        val currentUser = auth.currentUser ?: return
+        val userId = currentUser.uid
+
+        try {
+            // Update Firestore
+            firestore.collection("users")
+                .document(userId)
+                .update("pushNotificationsEnabled", enabled)
+                .await()
+
+            // Update local state
+            userState.value = userState.value?.copy(
+                pushNotificationsEnabled = enabled
+            )
+        } catch (e: Exception) {
+            throw e
+        }
+    }
+
+    override suspend fun updateUserProfile(displayName: String, householdMembers: Int) {
+        val currentUser = auth.currentUser ?: return
+        val userId = currentUser.uid
+
+        try {
+            // Update Firestore
+            firestore.collection("users")
+                .document(userId)
+                .update(
+                    mapOf(
+                        "displayName" to displayName,
+                        "householdMembers" to householdMembers
+                    )
+                )
+                .await()
+
+            userState.value = userState.value?.copy(
+                displayName = displayName,
+                householdMembers = householdMembers
+            )
+        } catch (e: Exception) {
+            throw e
+        }
+    }
+
+    override suspend fun changePassword(oldPassword: String, newPassword: String) {
+        val currentUser = auth.currentUser ?: throw Exception("No user logged in")
+        val email = currentUser.email ?: throw Exception("User email not found")
+
+        try {
+            // Re-authenticate user with old password (required by Firebase for security)
+            val credential = com.google.firebase.auth.EmailAuthProvider.getCredential(email, oldPassword)
+            currentUser.reauthenticate(credential).await()
+
+            // Update to new password
+            currentUser.updatePassword(newPassword).await()
+        } catch (e: Exception) {
+            // Common errors:
+            // - FirebaseAuthInvalidCredentialsException: Wrong old password
+            // - FirebaseAuthWeakPasswordException: New password too weak
+            // - FirebaseAuthRecentLoginRequiredException: Need to re-login
+            throw e
+        }
     }
 
     private suspend fun saveUserProfile(profile: UserProfile) {
