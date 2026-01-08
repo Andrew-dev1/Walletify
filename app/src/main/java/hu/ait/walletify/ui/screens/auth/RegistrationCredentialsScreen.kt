@@ -11,8 +11,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material3.Button
@@ -32,7 +30,6 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
@@ -181,9 +178,9 @@ fun RegistrationCredentialsScreen(
                     containerColor = Color(0xFF4CAF50)
                 ),
                 enabled = state !is LoginUiState.Loading &&
-                        name.isNotEmpty() &&
-                        email.isNotEmpty() &&
-                        password.isNotEmpty() &&
+                        name.isNotBlank() &&
+                        email.isNotBlank() &&
+                        password.isNotBlank() &&
                         password == confirmPassword &&
                         isPasswordValid(password)
 
@@ -232,11 +229,12 @@ fun RegistrationCredentialsScreen(
 }
 
 fun isPasswordValid(password: String): Boolean {
+    val isAlphaNumeric = password.matches("^[a-zA-Z0-9]*$".toRegex())
     val hasMinLength = password.length >= 8
     val hasUpperCase = password.any { it.isUpperCase() }
     val hasLowerCase = password.any { it.isLowerCase() }
     val hasDigit = password.any { it.isDigit() }
     val hasSpecialChar = password.any { it in "!@?&+#" }
 
-    return hasMinLength && hasUpperCase && hasLowerCase && hasDigit && hasSpecialChar
+    return hasMinLength && hasUpperCase && hasLowerCase && hasDigit && hasSpecialChar && isAlphaNumeric
 }

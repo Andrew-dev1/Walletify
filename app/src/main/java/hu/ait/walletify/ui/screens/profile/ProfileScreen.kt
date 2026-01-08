@@ -1,7 +1,5 @@
 package hu.ait.walletify.ui.screens.profile
 
-import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -11,9 +9,12 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ExitToApp
+import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Text
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -32,9 +33,9 @@ fun ProfileScreen(
     state: ProfileUiState,
     onLinkPlaid: () -> Unit,
     onExchangePublicToken: (String) -> Unit,
-    onUpdateProfile: (String, Int) -> Unit, // displayName, householdMembers
+    onUpdateProfile: (String, Int) -> Unit,
     onToggleNotifications: (Boolean) -> Unit,
-    onChangePassword: (String, String) -> Unit, // old, new
+    onChangePassword: (String, String) -> Unit,
     onLogout: () -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -138,17 +139,23 @@ private fun ProfileContent(
                     onClick = { showEditDialog = true }
                 )
                 HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.1f))
+
+                SettingsItem(
+                    icon = Icons.Default.House,
+                    title = "Household Members",
+                    subtitle = "${user.householdMembers} member${if (user.householdMembers != 1) "s" else ""}",
+                    onClick = { showEditDialog = true }
+                )
+                HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.1f))
+
                 SettingsItem(
                     icon = Icons.Default.Lock,
                     title = "Change Password",
                     subtitle = "Update your account password",
                     onClick = { showPasswordDialog = true }
                 )
-                HorizontalDivider(
-                    Modifier,
-                    DividerDefaults.Thickness,
-                    color = MaterialTheme.colorScheme.outline.copy(alpha = 0.1f)
-                )
+                HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.1f))
+
                 SettingsItem(
                     icon = Icons.Default.Notifications,
                     title = "Push Notifications",
@@ -211,13 +218,6 @@ private fun ProfileContent(
         item {
             SettingsCard {
                 SettingsItem(
-                    icon = Icons.Default.Person,
-                    title = "Household Members",
-                    subtitle = "${user.householdMembers} member${if (user.householdMembers != 1) "s" else ""}",
-                    onClick = { showEditDialog = true }
-                )
-                Divider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.1f))
-                SettingsItem(
                     icon = Icons.Default.Settings,
                     title = "App Preferences",
                     subtitle = "Theme, currency, language",
@@ -239,14 +239,16 @@ private fun ProfileContent(
                     subtitle = "Get help and support",
                     onClick = { /* TODO */ }
                 )
-                Divider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.1f))
+                HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.1f))
+
                 SettingsItem(
                     icon = Icons.Default.Email,
                     title = "Contact Us",
                     subtitle = "Send feedback or report issues",
                     onClick = { /* TODO */ }
                 )
-                Divider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.1f))
+                HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.1f))
+
                 SettingsItem(
                     icon = Icons.Default.Star,
                     title = "About Walletify",
@@ -268,7 +270,7 @@ private fun ProfileContent(
                 shape = RoundedCornerShape(8.dp)
             ) {
                 Icon(
-                    imageVector = Icons.Default.ExitToApp,
+                    imageVector = Icons.AutoMirrored.Filled.ExitToApp,
                     contentDescription = null,
                     modifier = Modifier.size(18.dp)
                 )
@@ -374,6 +376,18 @@ private fun ProfileHeader(
                 color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
                 modifier = Modifier.padding(top = 4.dp)
             )
+            Text(
+                text = "Household: ${user.householdMembers} member${if (user.householdMembers != 1) "s" else ""}",
+                fontSize = 14.sp,
+                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
+                modifier = Modifier.padding(top = 2.dp)
+            )
+            Text(
+                text = "Notifications: ${if (user.pushNotificationsEnabled) "Enabled" else "Disabled"}",
+                fontSize = 14.sp,
+                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
+                modifier = Modifier.padding(top = 2.dp)
+            )
 
             Spacer(modifier = Modifier.height(16.dp))
 
@@ -471,7 +485,7 @@ private fun SettingsItem(
             trailing()
         } else {
             Icon(
-                imageVector = Icons.Default.KeyboardArrowRight,
+                imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
                 contentDescription = null,
                 tint = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.4f)
             )
@@ -667,6 +681,18 @@ private fun ChangePasswordDialog(
     var oldPassword by remember { mutableStateOf("") }
     var newPassword by remember { mutableStateOf("") }
     var confirmPassword by remember { mutableStateOf("") }
+
+
+    fun isPasswordValid(password: String): Boolean {
+        val isAlphaNumeric = password.matches("^[a-zA-Z0-9]*$".toRegex())
+        val hasMinLength = password.length >= 8
+        val hasUpperCase = password.any { it.isUpperCase() }
+        val hasLowerCase = password.any { it.isLowerCase() }
+        val hasDigit = password.any { it.isDigit() }
+        val hasSpecialChar = password.any { it in "!@?&+#" }
+
+        return hasMinLength && hasUpperCase && hasLowerCase && hasDigit && hasSpecialChar && isAlphaNumeric
+    }
 
     Dialog(onDismissRequest = onDismiss) {
         Card(
