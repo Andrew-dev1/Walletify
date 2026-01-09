@@ -1,6 +1,7 @@
 package hu.ait.walletify.ui.screens.notifications
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -13,86 +14,47 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Done
 import androidx.compose.material.icons.filled.Info
-import androidx.compose.material.icons.filled.ThumbUp
 import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SwipeToDismissBox
+import androidx.compose.material3.SwipeToDismissBoxValue
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.rememberSwipeToDismissBoxState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import java.util.Date
+import hu.ait.walletify.data.model.AppNotification
+import hu.ait.walletify.data.model.NotificationType
 import java.util.Calendar
-
-data class NotificationItem(
-    val id: String,
-    val title: String,
-    val message: String,
-    val type: NotificationType,
-    val timestamp: Date,
-    val isRead: Boolean = false
-)
-
-enum class NotificationType {
-    INFO,
-    WARNING,
-    SUCCESS
-}
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun NotificationsScreen(
+    state: NotificationsUiState,
     onReturn: () -> Unit,
+    onMarkAsRead: (String) -> Unit,
+    onDelete: (String) -> Unit,
+    onMarkAllAsRead: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    // Mock notifications data
-    val notifications = listOf(
-        NotificationItem(
-            id = "1",
-            title = "Budget Alert",
-            message = "You've spent 80% of your monthly food budget",
-            type = NotificationType.WARNING,
-            timestamp = Date(),
-            isRead = false
-        ),
-        NotificationItem(
-            id = "2",
-            title = "Transaction Added",
-            message = "New transaction: Starbucks - $5.75",
-            type = NotificationType.SUCCESS,
-            timestamp = Date(System.currentTimeMillis() - 3600000),
-            isRead = false
-        ),
-        NotificationItem(
-            id = "3",
-            title = "Savings Goal Update",
-            message = "You're 50% towards your emergency fund goal",
-            type = NotificationType.INFO,
-            timestamp = Date(System.currentTimeMillis() - 7200000),
-            isRead = true
-        ),
-        NotificationItem(
-            id = "4",
-            title = "Account Connected",
-            message = "Your bank account has been successfully linked",
-            type = NotificationType.SUCCESS,
-            timestamp = Date(System.currentTimeMillis() - 86400000),
-            isRead = true
-        )
-    )
     Scaffold(
         topBar = {
             TopAppBar(
@@ -101,62 +63,126 @@ fun NotificationsScreen(
                         "Notifications",
                         fontWeight = FontWeight.Bold
                     )
-                }
-            ,
-                actions = {
-                    IconButton(
-                        onClick = onReturn,
-                        modifier = Modifier,
-                    ) {
+                },
+                navigationIcon = {
+                    IconButton(onClick = onReturn) {
                         Icon(
-                            imageVector = Icons.Default.ThumbUp,
-                            contentDescription = "Add Transaction"
+                            imageVector = Icons.Default.ArrowBack,
+                            contentDescription = "Back"
+                        )
+                    }
+                },
+                actions = {
+                    IconButton(onClick = onMarkAllAsRead) {
+                        Icon(
+                            imageVector = Icons.Default.Done,
+                            contentDescription = "Mark all as read"
                         )
                     }
                 }
             )
         }
-    ){ paddingValues ->
-        LazyColumn(
-            modifier = modifier
-                .fillMaxWidth()
-                .padding(paddingValues)
-                .background(MaterialTheme.colorScheme.background),
-//            contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-
-
-            if (notifications.isEmpty()) {
-                item {
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(32.dp),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Text(
-                            text = "No notifications",
-                            style = MaterialTheme.typography.bodyLarge,
-                            color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.6f)
-                        )
-                    }
+    ) { paddingValues ->
+        when (state) {
+            NotificationsUiState.Loading -> {
+                Box(
+                    modifier = modifier
+                        .fillMaxSize()
+                        .padding(paddingValues),
+                    contentAlignment = Alignment.Center
+                ) {
+                    CircularProgressIndicator(color = Color(0xFF4CAF50))
                 }
-            } else {
-                items(notifications, key = { it.id }) { notification ->
-                    NotificationCard(notification = notification)
+            }
+            is NotificationsUiState.Data -> {
+                LazyColumn(
+                    modifier = modifier
+                        .fillMaxWidth()
+                        .padding(paddingValues)
+                        .background(MaterialTheme.colorScheme.background),
+                    contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    if (state.notifications.isEmpty()) {
+                        item {
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(32.dp),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Text(
+                                    text = "No notifications",
+                                    style = MaterialTheme.typography.bodyLarge,
+                                    color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.6f)
+                                )
+                            }
+                        }
+                    } else {
+                        items(state.notifications, key = { it.notificationId }) { notification ->
+                            SwipeableNotificationCard(
+                                notification = notification,
+                                onDelete = { onDelete(notification.notificationId) },
+                                onMarkAsRead = { onMarkAsRead(notification.notificationId) }
+                            )
+                        }
+                    }
                 }
             }
         }
-
     }
+}
 
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun SwipeableNotificationCard(
+    notification: AppNotification,
+    onDelete: () -> Unit,
+    onMarkAsRead: () -> Unit
+) {
+    val dismissState = rememberSwipeToDismissBoxState(
+        confirmValueChange = { value ->
+            if (value == SwipeToDismissBoxValue.EndToStart) {
+                onDelete()
+                true
+            } else {
+                false
+            }
+        }
+    )
 
-
+    SwipeToDismissBox(
+        state = dismissState,
+        backgroundContent = {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(Color(0xFFE53935))
+                    .padding(horizontal = 16.dp),
+                contentAlignment = Alignment.CenterEnd
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Delete,
+                    contentDescription = "Delete",
+                    tint = Color.White
+                )
+            }
+        },
+        enableDismissFromStartToEnd = false,
+        enableDismissFromEndToStart = true
+    ) {
+        NotificationCard(
+            notification = notification,
+            onClick = { if (!notification.isRead) onMarkAsRead() }
+        )
+    }
 }
 
 @Composable
-private fun NotificationCard(notification: NotificationItem) {
+private fun NotificationCard(
+    notification: AppNotification,
+    onClick: () -> Unit
+) {
     val typeColor = when (notification.type) {
         NotificationType.INFO -> Color(0xFF2196F3)
         NotificationType.WARNING -> Color(0xFFFF9800)
@@ -170,13 +196,15 @@ private fun NotificationCard(notification: NotificationItem) {
     }
 
     Card(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(onClick = onClick),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
         colors = CardDefaults.cardColors(
             containerColor = if (notification.isRead) {
                 MaterialTheme.colorScheme.surface
             } else {
-                MaterialTheme.colorScheme.surface.copy(alpha = 0.95f)
+                MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f)
             }
         )
     ) {
@@ -190,7 +218,6 @@ private fun NotificationCard(notification: NotificationItem) {
                 horizontalArrangement = Arrangement.spacedBy(12.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                // Notification icon
                 Box(
                     modifier = Modifier
                         .background(
@@ -228,7 +255,6 @@ private fun NotificationCard(notification: NotificationItem) {
                     )
                 }
 
-                // Unread indicator
                 if (!notification.isRead) {
                     Box(
                         modifier = Modifier
@@ -244,9 +270,9 @@ private fun NotificationCard(notification: NotificationItem) {
     }
 }
 
-private fun formatTimestamp(date: Date): String {
+private fun formatTimestamp(timestamp: Long): String {
     val now = System.currentTimeMillis()
-    val diff = now - date.time
+    val diff = now - timestamp
     val seconds = diff / 1000
     val minutes = seconds / 60
     val hours = minutes / 60
@@ -259,7 +285,7 @@ private fun formatTimestamp(date: Date): String {
         days < 7 -> "$days day${if (days != 1L) "s" else ""} ago"
         else -> {
             val calendar = Calendar.getInstance()
-            calendar.time = date
+            calendar.timeInMillis = timestamp
             "${calendar.get(Calendar.MONTH) + 1}/${calendar.get(Calendar.DAY_OF_MONTH)}/${calendar.get(Calendar.YEAR)}"
         }
     }

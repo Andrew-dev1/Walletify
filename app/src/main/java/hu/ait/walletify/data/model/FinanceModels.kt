@@ -317,3 +317,67 @@ enum class BudgetPeriod(val value: String) {
         }
     }
 }
+
+/**
+ * Firestore document structure for notifications in users/{uid}/notifications/{notificationId}
+ */
+data class NotificationDocument(
+    val notificationId: String,
+    val title: String,
+    val message: String,
+    val type: String, // "info", "warning", "success"
+    val timestamp: Long = System.currentTimeMillis(),
+    val isRead: Boolean = false,
+    val relatedBudgetId: String? = null
+)
+
+/**
+ * Notification domain model
+ */
+data class AppNotification(
+    val notificationId: String,
+    val title: String,
+    val message: String,
+    val type: NotificationType,
+    val timestamp: Long = System.currentTimeMillis(),
+    val isRead: Boolean = false,
+    val relatedBudgetId: String? = null
+) {
+    companion object {
+        fun fromDocument(doc: NotificationDocument): AppNotification {
+            return AppNotification(
+                notificationId = doc.notificationId,
+                title = doc.title,
+                message = doc.message,
+                type = NotificationType.fromString(doc.type),
+                timestamp = doc.timestamp,
+                isRead = doc.isRead,
+                relatedBudgetId = doc.relatedBudgetId
+            )
+        }
+
+        fun toDocument(notification: AppNotification): NotificationDocument {
+            return NotificationDocument(
+                notificationId = notification.notificationId,
+                title = notification.title,
+                message = notification.message,
+                type = notification.type.value,
+                timestamp = notification.timestamp,
+                isRead = notification.isRead,
+                relatedBudgetId = notification.relatedBudgetId
+            )
+        }
+    }
+}
+
+enum class NotificationType(val value: String) {
+    INFO("info"),
+    WARNING("warning"),
+    SUCCESS("success");
+
+    companion object {
+        fun fromString(value: String): NotificationType {
+            return entries.find { it.value == value } ?: INFO
+        }
+    }
+}

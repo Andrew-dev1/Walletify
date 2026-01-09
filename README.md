@@ -44,14 +44,14 @@ This project is for **educational and portfolio purposes only**. It is not a pro
 ## 🛠️ Tech Stack
 
 | Category | Technology |
-|----------|-----------|
+|----------|---------|
 | Language | Kotlin |
 | UI | Jetpack Compose + Material 3 |
 | Architecture | MVVM + Clean Architecture |
 | Navigation | Type-safe Serializable routes |
 | State Management | StateFlow |
 | API Integration | Plaid API (Sandbox) |
-| Dependency Injection | Hilt (planned) |
+| Dependency Injection | Hilt  |
 | Notifications | Android Notifications |
 | Version Control | Git + GitHub |
 
@@ -112,8 +112,8 @@ Each screen:
 
 1. Clone the repository:
 ```bash
-git clone https://github.com/your-username/finsight-android.git
-cd finsight-android
+git clone https://github.com/Andrew-dev1/Walletify.git
+cd Walletify
 ```
 
 2. Open the project in Android Studio, sync Gradle, and run on an emulator or device.
@@ -123,7 +123,7 @@ cd finsight-android
 * ✅ Navigation & UI scaffolding
 * ✅ Auth flow 
 * ✅ Dashboard & transaction UI
-* 🚧 Plaid integration
+* ✅ Plaid integration
 * 🚧 Budget alerts
 * 🚧 Analytics engine
 * 🚧 AI chatbot

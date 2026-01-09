@@ -41,14 +41,15 @@ class TransactionsViewModel @Inject constructor(
         merchant: String,
         category: String,
         amount: Double,
-        isDebit: Boolean
+        isDebit: Boolean,
+        date: Long = System.currentTimeMillis()
     ) {
         viewModelScope.launch {
             val transaction = TransactionItem(
                 transactionId = "manual_${java.util.UUID.randomUUID()}",
                 accountId = "manual_account",
                 amount = if (isDebit) -amount else amount, // Negative for debits
-                date = System.currentTimeMillis(),
+                date = date,
                 name = merchant,
                 category = listOf(category),
                 pending = false,

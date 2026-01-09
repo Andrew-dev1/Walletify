@@ -49,6 +49,7 @@ import hu.ait.walletify.ui.screens.transctions.TransactionsScreen
 import hu.ait.walletify.ui.screens.transctions.TransactionsViewModel
 import hu.ait.walletify.ui.screens.auth.LoginUiState
 import hu.ait.walletify.ui.screens.notifications.NotificationsScreen
+import hu.ait.walletify.ui.screens.notifications.NotificationsViewModel
 import hu.ait.walletify.ui.screens.transctions.AddTransactionScreen
 
 @Composable
@@ -60,6 +61,7 @@ fun NavHost(modifier: Modifier) {
     val profileViewModel: ProfileViewModel = viewModel()
     val loginViewModel: LoginViewModel = viewModel()
     val plaidViewModel: PlaidViewModel = viewModel()
+    val notificationsViewModel: NotificationsViewModel = viewModel()
 
     NavDisplay(
         //modifier = modifier,
@@ -154,8 +156,13 @@ fun NavHost(modifier: Modifier) {
                 )
             }
             entry<NotificationsScreenRoute> {
+                val notificationsState by notificationsViewModel.state.collectAsStateWithLifecycle()
                 NotificationsScreen(
+                    state = notificationsState,
                     onReturn = { backStack.removeLastOrNull() },
+                    onMarkAsRead = notificationsViewModel::markAsRead,
+                    onDelete = notificationsViewModel::deleteNotification,
+                    onMarkAllAsRead = notificationsViewModel::markAllAsRead,
                     modifier = modifier
                 )
             }
@@ -163,8 +170,8 @@ fun NavHost(modifier: Modifier) {
                 val state by transactionsViewModel.state.collectAsStateWithLifecycle()
                 AddTransactionScreen(
                     state = state,
-                    onSave = { merchant, category, amount, isDebit ->
-                        transactionsViewModel.addManualTransaction(merchant, category, amount, isDebit)
+                    onSave = { merchant, category, amount, isDebit, date ->
+                        transactionsViewModel.addManualTransaction(merchant, category, amount, isDebit, date)
                         backStack.removeLastOrNull()
                     },
                     onCancel = { backStack.removeLastOrNull() },
@@ -283,8 +290,19 @@ private fun MainScreen(
             }
             SavingsRoute -> {
                 val state by savingsViewModel.state.collectAsStateWithLifecycle()
+                val showDialog by savingsViewModel.showCreateDialog.collectAsStateWithLifecycle()
+                val editingBudget by savingsViewModel.editingBudget.collectAsStateWithLifecycle()
                 SavingsScreen(
                     state = state,
+                    showCreateDialog = showDialog,
+                    editingBudget = editingBudget,
+                    onShowCreateDialog = savingsViewModel::showCreateBudgetDialog,
+                    onDismissCreateDialog = savingsViewModel::hideCreateBudgetDialog,
+                    onCreateBudget = savingsViewModel::createBudget,
+                    onDeleteBudget = savingsViewModel::deleteBudget,
+                    onEditBudget = savingsViewModel::startEditingBudget,
+                    onCancelEditBudget = savingsViewModel::cancelEditingBudget,
+                    onUpdateBudget = savingsViewModel::updateBudget,
                     modifier = Modifier.padding(padding)
                 )
             }
