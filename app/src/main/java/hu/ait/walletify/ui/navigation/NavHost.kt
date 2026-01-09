@@ -278,7 +278,10 @@ private fun MainScreen(
         when (currentDestination) {
             DashboardRoute -> {
                 val state by dashboardViewModel.state.collectAsStateWithLifecycle()
-                DashboardScreen(state = state, modifier = Modifier.padding(padding))
+                DashboardScreen(
+                    state = state,
+                    modifier = Modifier.padding(padding)
+                )
             }
             TransactionsRoute -> {
                 val state by transactionsViewModel.state.collectAsStateWithLifecycle()

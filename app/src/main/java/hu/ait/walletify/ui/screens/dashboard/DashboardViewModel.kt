@@ -13,7 +13,7 @@ import javax.inject.Inject
 
 sealed interface DashboardUiState {
     data object Loading : DashboardUiState
-    data class Data(val snapshot: DashboardSnapshot) : DashboardUiState // DashboardSnapshot
+    data class Data(val snapshot: DashboardSnapshot) : DashboardUiState
     data class Error(val message: String) : DashboardUiState
 }
 

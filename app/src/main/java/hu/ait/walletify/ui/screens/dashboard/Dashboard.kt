@@ -1,5 +1,6 @@
 package hu.ait.walletify.ui.screens.dashboard
 
+import androidx.compose.animation.core.snap
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -15,76 +16,31 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.material.Divider
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.List
-import androidx.compose.material.icons.filled.AccountCircle
 import androidx.compose.material.icons.filled.ErrorOutline
-import androidx.compose.material.icons.filled.Home
-import androidx.compose.material.icons.filled.Notifications
-import androidx.compose.material.icons.rounded.ThumbUp
-import androidx.compose.material3.Badge
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.NavigationBar
-import androidx.compose.material3.NavigationBarItem
-import androidx.compose.material3.NavigationBarItemDefaults
-import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.material3.TopAppBar
-import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.google.protobuf.enum
 import hu.ait.walletify.data.model.DashboardSnapshot
+import hu.ait.walletify.data.model.TransactionItem
 
 
-// have charts
-
-    // menu below with options
-    /*
-    1. dashboard
-    2. charts (how much has been spent so far for each category, spending/ savings trends
-    for negative vs positive affirmation, can be decided later,
-    3. Savings with automatic savings like finding best bank rates and automate amount deposited,
-    recommends starting with 10% of budget if possible until you reach enough to have two months
-    of emergency savings at least
-    4. View Transactions, allow for tags and changes to organize but still show by monthly no matter what
-        csv/ google sheets export, allow for single person and separate views
-    5. Settings
-        a. user info, change password, emails etc
-        b. notifications
-        c. connect multiple accounts to share info
-
-
-
-    */
-
-
-// Mock data classes for Dashboard
-data class Transaction(
-    val title: String,
-    val category: String,
-    val amount: Double,
-    val date: String,
-    val isExpense: Boolean = true
-)
 
 data class MonthlyData(
     val month: String,
@@ -137,9 +93,11 @@ fun DashboardContent(
 ) {
 
     val currentMonth = "November"
-    val totalSpent = 2847.50
-    val budgetRemaining = 1152.50
-    val lastMonthSpent = 3124.20
+    val totalSpent = snapshot.monthToDateSpend
+    val cashFlow = snapshot.netCashFlow
+
+    val currentMonthSpent = snapshot.insights[0].spent
+    val lastMonthSpent = snapshot.insights[1].spent
 
     // Mock spending data
     val spendingData = listOf(
@@ -147,223 +105,218 @@ fun DashboardContent(
         MonthlyData("Nov", 2847.50)
     )
 
-    // Mock recent transactions
-    val recentTransactions = listOf(
-        Transaction("Starbucks", "Food", 5.75, "Nov 23"),
-        Transaction("Uber", "Transport", 18.50, "Nov 22"),
-        Transaction("Netflix", "Entertainment", 15.99, "Nov 21"),
-        Transaction("Whole Foods", "Groceries", 87.42, "Nov 20"),
-        Transaction("Salary", "Income", 4000.00, "Nov 15", isExpense = false)
-    )
 
-        LazyColumn(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(horizontal = 16.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp)
-        ) {
-            item { Spacer(modifier = Modifier.height(8.dp)) }
+    val recentTransactions2 = snapshot.recentTransactions
+    val remainingTasks = snapshot.onboardingChecklist
 
-            // Line Chart Card
-            item {
+    LazyColumn(
+        modifier = modifier
+            .fillMaxWidth(),
+        contentPadding = PaddingValues(all = 8.dp),
+        verticalArrangement = Arrangement.spacedBy(16.dp)
+    ) {
+        item { Spacer(modifier = Modifier.height(8.dp)) }
+
+        // Line Chart Card
+        item {
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+            ) {
+                Column(
+                    modifier = Modifier.padding(16.dp)
+                ) {
+                    Text(
+                        text = "Spending Overview",
+                        fontSize = 18.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        modifier = Modifier.padding(bottom = 8.dp)
+                    )
+
+                    Text(
+                        text = "This month vs Last month",
+                        fontSize = 12.sp,
+                        color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.6f),
+                        modifier = Modifier.padding(bottom = 16.dp)
+                    )
+
+                    // Mock line chart visualization
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(150.dp),
+                        horizontalArrangement = Arrangement.SpaceEvenly,
+                        verticalAlignment = Alignment.Bottom
+                    ) {
+                        spendingData.forEach { data ->
+                            Column(
+                                horizontalAlignment = Alignment.CenterHorizontally,
+                                modifier = Modifier.weight(1f)
+                            ) {
+                                Box(
+                                    modifier = Modifier
+                                        .width(60.dp)
+                                        .height((data.amount / 40).dp)
+                                        .background(
+                                            color = if (data.month == "Nov")
+                                                Color(0xFF4CAF50)
+                                            else
+                                                Color(0xFFE0E0E0),
+                                            shape = MaterialTheme.shapes.small
+                                        )
+                                )
+                                Spacer(modifier = Modifier.height(8.dp))
+                                Text(
+                                    text = data.month,
+                                    fontSize = 12.sp,
+                                    fontWeight = FontWeight.Medium
+                                )
+                                Text(
+                                    text = "${String.format("%.0f", data.amount)}",
+                                    fontSize = 10.sp,
+                                    color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.6f)
+                                )
+                            }
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(12.dp))
+
+                    val difference = lastMonthSpent - totalSpent
+                    val percentChange = (difference / lastMonthSpent) * 100
+
+                    Text(
+                        text = "You spent ${"%.2f".format(difference)} less than last month (${String.format("%.1f", percentChange)}% decrease)",
+                        fontSize = 12.sp,
+                        color = Color(0xFF4CAF50),
+                        fontWeight = FontWeight.Medium
+                    )
+                }
+            }
+        }
+
+        // Quick Stats Row
+        item {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                // Total Spent Card
                 Card(
-                    modifier = Modifier.fillMaxWidth(),
+                    modifier = Modifier.weight(1f),
                     elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
                 ) {
                     Column(
                         modifier = Modifier.padding(16.dp)
                     ) {
                         Text(
-                            text = "Spending Overview",
-                            fontSize = 18.sp,
-                            fontWeight = FontWeight.SemiBold,
-                            modifier = Modifier.padding(bottom = 8.dp)
-                        )
-
-                        Text(
-                            text = "This month vs Last month",
+                            text = "Total Spent",
                             fontSize = 12.sp,
-                            color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.6f),
-                            modifier = Modifier.padding(bottom = 16.dp)
+                            color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.6f)
                         )
-
-                        // Mock line chart visualization
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .height(150.dp),
-                            horizontalArrangement = Arrangement.SpaceEvenly,
-                            verticalAlignment = Alignment.Bottom
-                        ) {
-                            spendingData.forEach { data ->
-                                Column(
-                                    horizontalAlignment = Alignment.CenterHorizontally,
-                                    modifier = Modifier.weight(1f)
-                                ) {
-                                    Box(
-                                        modifier = Modifier
-                                            .width(60.dp)
-                                            .height((data.amount / 40).dp)
-                                            .background(
-                                                color = if (data.month == "Nov")
-                                                    Color(0xFF4CAF50)
-                                                else
-                                                    Color(0xFFE0E0E0),
-                                                shape = MaterialTheme.shapes.small
-                                            )
-                                    )
-                                    Spacer(modifier = Modifier.height(8.dp))
-                                    Text(
-                                        text = data.month,
-                                        fontSize = 12.sp,
-                                        fontWeight = FontWeight.Medium
-                                    )
-                                    Text(
-                                        text = "${String.format("%.0f", data.amount)}",
-                                        fontSize = 10.sp,
-                                        color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.6f)
-                                    )
-                                }
-                            }
-                        }
-
-                        Spacer(modifier = Modifier.height(12.dp))
-
-                        val difference = lastMonthSpent - totalSpent
-                        val percentChange = (difference / lastMonthSpent) * 100
-
                         Text(
-                            text = "You spent ${String.format("%.2f", difference)} less than last month (${String.format("%.1f", percentChange)}% decrease)",
-                            fontSize = 12.sp,
-                            color = Color(0xFF4CAF50),
-                            fontWeight = FontWeight.Medium
+                            text = "%.2f".format(totalSpent),
+                            fontSize = 24.sp,
+                            fontWeight = FontWeight.Bold,
+                            modifier = Modifier.padding(top = 4.dp)
                         )
                     }
                 }
-            }
 
-            // Quick Stats Row
-            item {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(12.dp)
-                ) {
-                    // Total Spent Card
-                    Card(
-                        modifier = Modifier.weight(1f),
-                        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
-                    ) {
-                        Column(
-                            modifier = Modifier.padding(16.dp)
-                        ) {
-                            Text(
-                                text = "Total Spent",
-                                fontSize = 12.sp,
-                                color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.6f)
-                            )
-                            Text(
-                                text = "${String.format("%.2f", totalSpent)}",
-                                fontSize = 24.sp,
-                                fontWeight = FontWeight.Bold,
-                                modifier = Modifier.padding(top = 4.dp)
-                            )
-                        }
-                    }
-
-                    // Budget Remaining Card
-                    Card(
-                        modifier = Modifier.weight(1f),
-                        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
-                    ) {
-                        Column(
-                            modifier = Modifier.padding(16.dp)
-                        ) {
-                            Text(
-                                text = "Remaining",
-                                fontSize = 12.sp,
-                                color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.6f)
-                            )
-                            Text(
-                                text = "${String.format("%.2f", budgetRemaining)}",
-                                fontSize = 24.sp,
-                                fontWeight = FontWeight.Bold,
-                                color = Color(0xFF4CAF50),
-                                modifier = Modifier.padding(top = 4.dp)
-                            )
-                        }
-                    }
-                }
-            }
-
-            // Setup Section
-            item {
+                // Budget Remaining Card
                 Card(
-                    modifier = Modifier.fillMaxWidth(),
-                    elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
-                    colors = CardDefaults.cardColors(
-                        containerColor = Color(0xFFF5F5F5)
-                    )
+                    modifier = Modifier.weight(1f),
+                    elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
                 ) {
                     Column(
                         modifier = Modifier.padding(16.dp)
                     ) {
                         Text(
-                            text = "Complete Your Setup",
-                            fontSize = 18.sp,
-                            fontWeight = FontWeight.SemiBold,
-                            modifier = Modifier.padding(bottom = 12.dp)
+                            text = "Cash Flow",
+                            fontSize = 12.sp,
+                            color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.6f)
                         )
-
-                        SetupActionItem(
-                            title = "Set Up Budgets",
-                            description = "Plan your monthly spending",
-                            onClick = { /* Navigate to budgeting */ }
-                        )
-
-                        Divider(modifier = Modifier.padding(vertical = 8.dp))
-
-                        SetupActionItem(
-                            title = "Create Saving Goals",
-                            description = "Track your financial targets",
-                            onClick = { /* Navigate to goals */ }
-                        )
-
-                        Divider(modifier = Modifier.padding(vertical = 8.dp))
-
-                        SetupActionItem(
-                            title = "Review Subscriptions",
-                            description = "Manage recurring payments",
-                            onClick = { /* Navigate to subscriptions */ }
+                        Text(
+                            text = "$%.2f".format(cashFlow),
+                            fontSize = 24.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = if (cashFlow >= 0) Color(0xFF4CAF50) else Color(0xFFE53935),
+                            modifier = Modifier.padding(top = 4.dp)
                         )
                     }
                 }
             }
+        }
 
-            // Recent Transactions
-            item {
-                Text(
-                    text = "Recent Transactions",
-                    fontSize = 18.sp,
-                    fontWeight = FontWeight.SemiBold,
-                    modifier = Modifier.padding(top = 8.dp, bottom = 8.dp)
+        // Setup Section
+        item {
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
+                colors = CardDefaults.cardColors(
+                    containerColor = Color(0xFFF5F5F5)
                 )
-            }
-
-            items(recentTransactions) { transaction ->
-                TransactionItem(transaction = transaction)
-            }
-
-            item {
-                TextButton(
-                    onClick = { /* Navigate to all transactions */ },
-                    modifier = Modifier.fillMaxWidth()
+            ) {
+                Column (
+                    modifier = Modifier.padding(16.dp)
                 ) {
-                    Text("View All Transactions")
+
+                    Text(
+                        text = "Complete Your Setup",
+                        fontSize = 18.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        modifier = Modifier.padding(bottom = 12.dp)
+                    )
+
+                    val incompleteTasks = remainingTasks.filter { !it.completed }
+
+                    incompleteTasks.forEachIndexed { index, action ->
+                        SetupActionItem(
+                            action.title,
+                            action.description,
+                            onClick = { /* Handle action click */ }
+                        )
+
+                        // Only add divider if not the last item
+                        if (index < incompleteTasks.size - 1) {
+                            HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
+                        }
+                    }
+
                 }
             }
-
-            item { Spacer(modifier = Modifier.height(16.dp)) }
         }
+
+        // Recent Transactions
+        item {
+            Text(
+                text = "Recent Transactions",
+                fontSize = 18.sp,
+                fontWeight = FontWeight.SemiBold,
+                modifier = Modifier.padding(top = 8.dp, bottom = 8.dp)
+            )
+        }
+
+
+
+        items(
+            items = recentTransactions2,
+            key = { it.transactionId }
+        ) { transaction ->
+            TransactionItemCard(transaction = transaction)
+        }
+        item {
+            TextButton(
+                onClick = { /* Navigate to all transactions */ },
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text("View All Transactions")
+            }
+        }
+
+
+        item { Spacer(modifier = Modifier.height(16.dp)) }
+    }
 
 }
 
@@ -400,7 +353,7 @@ fun SetupActionItem(
 }
 
 @Composable
-fun TransactionItem(transaction: Transaction) {
+fun TransactionItemCard(transaction: TransactionItem) {
     Card(
         modifier = Modifier.fillMaxWidth(),
         elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
@@ -428,7 +381,7 @@ fun TransactionItem(transaction: Transaction) {
                     contentAlignment = Alignment.Center
                 ) {
                     Text(
-                        text = transaction.category.first().toString(),
+                        text = transaction.category.first().first().toString(),
                         fontWeight = FontWeight.Bold,
                         color = Color(0xFF4CAF50)
                     )
@@ -436,12 +389,12 @@ fun TransactionItem(transaction: Transaction) {
 
                 Column {
                     Text(
-                        text = transaction.title,
+                        text = transaction.merchantName?: "Blank",
                         fontSize = 14.sp,
                         fontWeight = FontWeight.Medium
                     )
                     Text(
-                        text = "${transaction.category} • ${transaction.date}",
+                        text = "${transaction.primaryCategory} • ${transaction.formattedDate}",
                         fontSize = 12.sp,
                         color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.6f)
                     )
@@ -449,10 +402,12 @@ fun TransactionItem(transaction: Transaction) {
             }
 
             Text(
-                text = "${if (transaction.isExpense) "-" else "+"}${String.format("%.2f", transaction.amount)}",
+                text = "${if (transaction.isDebit) "" else "+"}${
+                    "%.2f".format(transaction.amount)
+                }",
                 fontSize = 16.sp,
                 fontWeight = FontWeight.SemiBold,
-                color = if (transaction.isExpense)
+                color = if (transaction.isDebit)
                     MaterialTheme.colorScheme.onBackground
                 else
                     Color(0xFF4CAF50)
